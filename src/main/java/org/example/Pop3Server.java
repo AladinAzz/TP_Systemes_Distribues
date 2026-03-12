@@ -119,7 +119,8 @@ class Pop3Session extends Thread {
         // Pour simplifier, on suppose que "userDir" est le dossier de l'utilisateur déjà défini
         authenticated = true;
         // Chargez les fichiers du répertoire dans une ArrayList mutable
-        File[] files = userDir.listFiles();
+        // Filter only .txt files (exclude .flags companion files used by IMAP)
+        File[] files = userDir.listFiles((d, name) -> name.endsWith(".txt"));
         if (files == null) {
             emails = new ArrayList<>();
         } else {
