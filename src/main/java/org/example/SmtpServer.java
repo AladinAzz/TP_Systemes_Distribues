@@ -74,6 +74,11 @@ class SmtpSession extends Thread {
                         state = SmtpState.HELO_RECEIVED;
                         out.println("250 OK: Message accepted for delivery");
                     } else {
+                        // RFC 5321 Section 4.5.2 - Transparency (dot-stuffing)
+                        // If a line starts with a period, remove the leading period.
+                        if (line.startsWith(".")) {
+                            line = line.substring(1);
+                        }
                         dataBuffer.append(line).append("\r\n");
                     }
                     continue;
@@ -85,8 +90,10 @@ class SmtpSession extends Thread {
 
                 switch (command) {
                     case "HELO":
-                    case "EHLO":
                         handleHelo(argument);
+                        break;
+                    case "EHLO":
+                        handleEhlo(argument);
                         break;
                     case "MAIL":
                         handleMailFrom(argument);
@@ -96,6 +103,12 @@ class SmtpSession extends Thread {
                         break;
                     case "DATA":
                         handleData();
+                        break;
+                    case "RSET":
+                        handleRset();
+                        break;
+                    case "NOOP":
+                        handleNoop();
                         break;
                     case "QUIT":
                         handleQuit();
@@ -125,13 +138,24 @@ class SmtpSession extends Thread {
         out.println("250 Hello " + arg);
     }
 
+    private void handleEhlo(String arg) {
+        // RFC 5321 Section 4.1.1.1 - EHLO must return multiline 250
+        state = SmtpState.HELO_RECEIVED;
+        sender = "";
+        recipients.clear();
+        out.println("250-smtp.example.com Hello " + arg);
+        out.println("250 OK");
+    }
+
     private void handleMailFrom(String arg) {
+        // RFC 5321: MAIL FROM requires HELO/EHLO first
+        if (state == SmtpState.CONNECTED) {
+            out.println("503 Bad sequence of commands");
+            return;
+        }
         // Vérifier que l'argument correspond exactement au format "FROM:<email>"
-        // L'expression régulière vérifie que la chaîne commence par "FROM:", suivie de zéro ou plusieurs espaces,
-        // puis d'une adresse email entre chevrons et rien d'autre.
         if (!arg.toUpperCase().matches("^FROM:\\s*<[^>]+>$")) {
             out.println("501 Syntax error in parameters or arguments");
-            out.println(arg.toUpperCase());
             return;
         }
         // Extraire l'adresse email en retirant "FROM:" et les chevrons.
@@ -190,6 +214,22 @@ class SmtpSession extends Thread {
         }
         state = SmtpState.DATA_RECEIVING;
         out.println("354 Start mail input; end with <CRLF>.<CRLF>");
+    }
+
+    // RFC 5321 - RSET command: abort current mail transaction
+    private void handleRset() {
+        sender = "";
+        recipients.clear();
+        dataBuffer.setLength(0);
+        if (state != SmtpState.CONNECTED) {
+            state = SmtpState.HELO_RECEIVED;
+        }
+        out.println("250 OK");
+    }
+
+    // RFC 5321 - NOOP command: do nothing, return OK
+    private void handleNoop() {
+        out.println("250 OK");
     }
 
     private void handleQuit() {

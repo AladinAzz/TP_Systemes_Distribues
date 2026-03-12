@@ -1,0 +1,9 @@
+From: sender@test.com
+To: user1@test.com
+Date: jeu., 12 mars 2026 01:45:29 +0100
+Subject: Test Email
+
+Subject: Test Email
+
+Hello, this is a test email.
+.this line starts with a dot

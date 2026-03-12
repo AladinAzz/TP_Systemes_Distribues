@@ -77,6 +77,9 @@ class Pop3Session extends Thread {
                     case "RSET":
                         handleRset();
                         break;
+                    case "NOOP":
+                        handleNoop();
+                        break;
                     case "QUIT":
                         handleQuit();
                         return; // Terminer la session
@@ -169,7 +172,14 @@ class Pop3Session extends Thread {
             BufferedReader reader = new BufferedReader(new FileReader(emailFile));
             String line;
             while ((line = reader.readLine()) != null) {
-                out.println(line);
+                // RFC 1939 Section 3 - Byte-stuffing:
+                // If a line begins with a termination octet ("."),
+                // prepend an additional "." to avoid premature termination.
+                if (line.startsWith(".")) {
+                    out.println("." + line);
+                } else {
+                    out.println(line);
+                }
             }
             out.println(".");
             reader.close();
@@ -214,6 +224,15 @@ class Pop3Session extends Thread {
             deletionFlags.set(i, false);
         }
         out.println("+OK Deletion marks reset");
+    }
+
+    // RFC 1939 - NOOP command: do nothing, return +OK
+    private void handleNoop() {
+        if (!authenticated) {
+            out.println("-ERR Authentication required");
+            return;
+        }
+        out.println("+OK");
     }
 
 
