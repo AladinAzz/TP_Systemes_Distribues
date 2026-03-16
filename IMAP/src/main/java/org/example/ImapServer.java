@@ -4,17 +4,70 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.example.service.ServerObserver;
+
 public class ImapServer {
-    private static final int PORT = 143;
+    private final int port;
+    private final ServerObserver observer;
+    private ServerSocket serverSocket;
+    private volatile boolean running = false;
+    private final List<ImapSession> activeSessions = Collections.synchronizedList(new ArrayList<>());
+
+    public ImapServer(int port, ServerObserver observer) {
+        this.port = port;
+        this.observer = observer;
+    }
+
+    public void start() throws IOException {
+        serverSocket = new ServerSocket(port);
+        running = true;
+        if (observer != null) observer.logEvent("Serveur IMAP en écoute sur le port " + port);
+
+        while (running) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                String clientIp = clientSocket.getInetAddress().getHostAddress();
+                if (observer != null) observer.logEvent("Nouvelle connexion client: " + clientIp);
+
+                ImapSession session = new ImapSession(clientSocket, observer, clientIp, this);
+                activeSessions.add(session);
+                session.start();
+            } catch (SocketException e) {
+                if (running) {
+                    if (observer != null) observer.logEvent("Erreur d'acceptation de socket: " + e.getMessage());
+                } else {
+                    if (observer != null) observer.logEvent("Boucle d'acceptation arrêtée.");
+                }
+            }
+        }
+    }
+    
+    public void stop() {
+        running = false;
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            if (observer != null) observer.logEvent("Erreur lors de la fermeture du serveur: " + e.getMessage());
+        }
+        
+        // Fermer les connexions actives
+        synchronized (activeSessions) {
+            for (ImapSession session : activeSessions) {
+                session.interruptSession();
+            }
+            activeSessions.clear();
+        }
+    }
+    
+    public void removeSession(ImapSession session) {
+        activeSessions.remove(session);
+    }
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("IMAP Server started on port " + PORT);
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Connection from " + clientSocket.getInetAddress());
-                new ImapSession(clientSocket).start();
-            }
+        try {
+            new ImapServer(143, null).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -25,6 +78,10 @@ class ImapSession extends Thread {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
+    private final ServerObserver observer;
+    private final String clientIp;
+    private final ImapServer server;
+    private volatile boolean interrupted = false;
 
     // Finite State Machine for IMAP session (RFC 9051)
     private enum ImapState {
@@ -41,27 +98,56 @@ class ImapSession extends Thread {
     private String selectedMailbox;
 
     public ImapSession(Socket socket) {
+        this(socket, null, socket.getInetAddress().getHostAddress(), null);
+    }
+    
+    public ImapSession(Socket socket, ServerObserver observer, String clientIp, ImapServer server) {
         this.socket = socket;
+        this.observer = observer;
+        this.clientIp = clientIp;
+        this.server = server;
         this.state = ImapState.NOT_AUTHENTICATED;
+    }
+    
+    public void interruptSession() {
+        interrupted = true;
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            // Ignorer
+        }
+        this.interrupt();
+    }
+    
+    private void sendResponse(String response) {
+        if (!interrupted) {
+            out.println(response);
+            if (observer != null) observer.logResponse(response);
+        }
     }
 
     @Override
     public void run() {
         try {
+            if (observer != null && observer instanceof org.example.service.ImapServerService) {
+                ((org.example.service.ImapServerService) observer).incrementClient();
+            }
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
             // RFC 9051 - Server greeting
-            out.println("* OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready");
+            sendResponse("* OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready");
 
             String line;
-            while ((line = in.readLine()) != null) {
-                System.out.println("Received: " + line);
+            while (!interrupted && (line = in.readLine()) != null) {
+                if (observer != null) observer.logRequest(clientIp, line);
 
                 // Parse tag and command
                 String[] parts = line.split(" ", 3);
                 if (parts.length < 2) {
-                    out.println("* BAD Invalid command format");
+                    sendResponse("* BAD Invalid command format");
                     continue;
                 }
 
@@ -95,57 +181,71 @@ class ImapSession extends Thread {
                         handleLogout(tag);
                         return;
                     default:
-                        out.println(tag + " BAD Unknown command");
+                        sendResponse(tag + " BAD Unknown command");
                         break;
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error in IMAP session: " + e.getMessage());
+            if (!interrupted && observer != null) {
+                observer.logEvent("Erreur session " + clientIp + " : " + e.getMessage());
+            }
         } finally {
             try { socket.close(); } catch (IOException e) { /* ignore */ }
+            if (server != null) server.removeSession(this);
+            if (observer != null) {
+                observer.logEvent("Déconnexion client: " + clientIp);
+                if (observer instanceof org.example.service.ImapServerService) {
+                    ((org.example.service.ImapServerService) observer).decrementClient();
+                }
+            }
         }
     }
 
     // ===================== Command Handlers =====================
 
     private void handleCapability(String tag) {
-        out.println("* CAPABILITY IMAP4rev2");
-        out.println(tag + " OK CAPABILITY completed");
+        sendResponse("* CAPABILITY IMAP4rev2");
+        sendResponse(tag + " OK CAPABILITY completed");
     }
 
     private void handleNoop(String tag) {
-        out.println(tag + " OK NOOP completed");
+        sendResponse(tag + " OK NOOP completed");
     }
 
     private void handleLogin(String tag, String args) {
         if (state != ImapState.NOT_AUTHENTICATED) {
-            out.println(tag + " BAD Already authenticated");
+            sendResponse(tag + " BAD Already authenticated");
             return;
         }
 
         String[] parts = args.split(" ", 2);
         if (parts.length < 2) {
-            out.println(tag + " BAD LOGIN requires username and password");
+            sendResponse(tag + " BAD LOGIN requires username and password");
             return;
         }
 
         String user = parts[0].replaceAll("\"", "");
         // Password is accepted for simplicity (same as POP3)
 
-        File dir = new File("mailserver/" + user);
+        File mailserverDir = new File("mailserver");
+        if (!mailserverDir.exists()) {
+            mailserverDir = new File("../mailserver");
+        }
+
+        File dir = new File(mailserverDir, user);
         if (dir.exists() && dir.isDirectory()) {
             username = user;
             userDir = dir;
             state = ImapState.AUTHENTICATED;
-            out.println(tag + " OK LOGIN completed");
+            sendResponse(tag + " OK LOGIN completed");
         } else {
-            out.println(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
+            sendResponse(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
         }
     }
 
     private void handleSelect(String tag, String args) {
         if (state == ImapState.NOT_AUTHENTICATED) {
-            out.println(tag + " BAD Command requires authentication");
+            sendResponse(tag + " BAD Command requires authentication");
             return;
         }
 
@@ -153,7 +253,7 @@ class ImapSession extends Thread {
 
         // Only INBOX is supported (as per assignment spec)
         if (!mailbox.equalsIgnoreCase("INBOX")) {
-            out.println(tag + " NO [NONEXISTENT] Mailbox does not exist");
+            sendResponse(tag + " NO [NONEXISTENT] Mailbox does not exist");
             return;
         }
 
@@ -180,22 +280,22 @@ class ImapSession extends Thread {
         }
 
         // RFC 9051 - SELECT response
-        out.println("* " + emails.size() + " EXISTS");
-        out.println("* 0 RECENT");
-        out.println("* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)");
-        out.println("* OK [PERMANENTFLAGS (\\Seen \\Deleted)]");
+        sendResponse("* " + emails.size() + " EXISTS");
+        sendResponse("* 0 RECENT");
+        sendResponse("* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)");
+        sendResponse("* OK [PERMANENTFLAGS (\\Seen \\Deleted)]");
         if (firstUnseen > 0) {
-            out.println("* OK [UNSEEN " + firstUnseen + "]");
+            sendResponse("* OK [UNSEEN " + firstUnseen + "]");
         }
-        out.println(tag + " OK [READ-WRITE] SELECT completed");
+        sendResponse(tag + " OK [READ-WRITE] SELECT completed");
     }
 
     private void handleFetch(String tag, String args) {
         if (state != ImapState.SELECTED) {
             if (state == ImapState.NOT_AUTHENTICATED) {
-                out.println(tag + " BAD Command requires authentication");
+                sendResponse(tag + " BAD Command requires authentication");
             } else {
-                out.println(tag + " BAD No mailbox selected");
+                sendResponse(tag + " BAD No mailbox selected");
             }
             return;
         }
@@ -203,7 +303,7 @@ class ImapSession extends Thread {
         // Parse: <sequence> <data items>
         String[] parts = args.split(" ", 2);
         if (parts.length < 2) {
-            out.println(tag + " BAD FETCH requires sequence number and data items");
+            sendResponse(tag + " BAD FETCH requires sequence number and data items");
             return;
         }
 
@@ -211,12 +311,12 @@ class ImapSession extends Thread {
         try {
             seqNum = Integer.parseInt(parts[0]);
         } catch (NumberFormatException e) {
-            out.println(tag + " BAD Invalid sequence number");
+            sendResponse(tag + " BAD Invalid sequence number");
             return;
         }
 
         if (seqNum < 1 || seqNum > emails.size()) {
-            out.println(tag + " NO No such message");
+            sendResponse(tag + " NO No such message");
             return;
         }
 
@@ -233,24 +333,22 @@ class ImapSession extends Thread {
         if (upperItems.equals("FLAGS")) {
             // Return flags only
             List<String> flags = getFlags(emailFile);
-            out.println("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", flags) + "))");
+            sendResponse("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", flags) + "))");
 
         } else if (upperItems.equals("BODY[HEADER]") || upperItems.equals("BODY.PEEK[HEADER]")) {
             // Return headers only
             String headers = getHeaders(emailFile);
             byte[] headerBytes = headers.getBytes();
-            out.println("* " + seqNum + " FETCH (BODY[HEADER] {" + headerBytes.length + "}");
-            out.print(headers);
-            out.println(")");
+            sendResponse("* " + seqNum + " FETCH (BODY[HEADER] {" + headerBytes.length + "}");
+            sendResponse(headers + ")"); // Simplifié pour utiliser sendResponse au lieu de out.print & out.println
 
         } else if (upperItems.equals("BODY[]") || upperItems.equals("RFC822")
                 || upperItems.equals("BODY.PEEK[]")) {
             // Return full message
             String content = getFullContent(emailFile);
             byte[] contentBytes = content.getBytes();
-            out.println("* " + seqNum + " FETCH (BODY[] {" + contentBytes.length + "}");
-            out.print(content);
-            out.println(")");
+            sendResponse("* " + seqNum + " FETCH (BODY[] {" + contentBytes.length + "}");
+            sendResponse(content + ")");
             // Auto-set \Seen flag if not using PEEK
             if (!upperItems.contains("PEEK")) {
                 addFlag(emailFile, "\\Seen");
@@ -260,24 +358,23 @@ class ImapSession extends Thread {
             // Return body only
             String body = getBody(emailFile);
             byte[] bodyBytes = body.getBytes();
-            out.println("* " + seqNum + " FETCH (BODY[TEXT] {" + bodyBytes.length + "}");
-            out.print(body);
-            out.println(")");
+            sendResponse("* " + seqNum + " FETCH (BODY[TEXT] {" + bodyBytes.length + "}");
+            sendResponse(body + ")");
 
         } else {
-            out.println(tag + " BAD Unknown FETCH data item: " + dataItems);
+            sendResponse(tag + " BAD Unknown FETCH data item: " + dataItems);
             return;
         }
 
-        out.println(tag + " OK FETCH completed");
+        sendResponse(tag + " OK FETCH completed");
     }
 
     private void handleStore(String tag, String args) {
         if (state != ImapState.SELECTED) {
             if (state == ImapState.NOT_AUTHENTICATED) {
-                out.println(tag + " BAD Command requires authentication");
+                sendResponse(tag + " BAD Command requires authentication");
             } else {
-                out.println(tag + " BAD No mailbox selected");
+                sendResponse(tag + " BAD No mailbox selected");
             }
             return;
         }
@@ -286,7 +383,7 @@ class ImapSession extends Thread {
         // e.g., "1 +FLAGS (\Seen)", "1 -FLAGS (\Seen)", "1 FLAGS (\Seen)"
         String[] parts = args.split(" ", 3);
         if (parts.length < 3) {
-            out.println(tag + " BAD STORE requires sequence, action, and flags");
+            sendResponse(tag + " BAD STORE requires sequence, action, and flags");
             return;
         }
 
@@ -294,12 +391,12 @@ class ImapSession extends Thread {
         try {
             seqNum = Integer.parseInt(parts[0]);
         } catch (NumberFormatException e) {
-            out.println(tag + " BAD Invalid sequence number");
+            sendResponse(tag + " BAD Invalid sequence number");
             return;
         }
 
         if (seqNum < 1 || seqNum > emails.size()) {
-            out.println(tag + " NO No such message");
+            sendResponse(tag + " NO No such message");
             return;
         }
 
@@ -329,28 +426,29 @@ class ImapSession extends Thread {
                 break;
             case "FLAGS":
             case "FLAGS.SILENT":
-                setFlags(emailFile, newFlags);
+                // Ne plus forcer une List immuable pour que remove/add fonctionne après
+                setFlags(emailFile, new ArrayList<>(newFlags));
                 break;
             default:
-                out.println(tag + " BAD Unknown STORE action");
+                sendResponse(tag + " BAD Unknown STORE action");
                 return;
         }
 
         // Send updated flags back (unless SILENT)
         if (!action.contains("SILENT")) {
             List<String> currentFlags = getFlags(emailFile);
-            out.println("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", currentFlags) + "))");
+            sendResponse("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", currentFlags) + "))");
         }
 
-        out.println(tag + " OK STORE completed");
+        sendResponse(tag + " OK STORE completed");
     }
 
     private void handleSearch(String tag, String args) {
         if (state != ImapState.SELECTED) {
             if (state == ImapState.NOT_AUTHENTICATED) {
-                out.println(tag + " BAD Command requires authentication");
+                sendResponse(tag + " BAD Command requires authentication");
             } else {
-                out.println(tag + " BAD No mailbox selected");
+                sendResponse(tag + " BAD No mailbox selected");
             }
             return;
         }
@@ -389,7 +487,7 @@ class ImapSession extends Thread {
                     }
                     break;
                 default:
-                    out.println(tag + " BAD Unknown search criteria");
+                    sendResponse(tag + " BAD Unknown search criteria");
                     return;
             }
         }
@@ -398,14 +496,14 @@ class ImapSession extends Thread {
         for (int seq : results) {
             sb.append(" ").append(seq);
         }
-        out.println(sb.toString());
-        out.println(tag + " OK SEARCH completed");
+        sendResponse(sb.toString());
+        sendResponse(tag + " OK SEARCH completed");
     }
 
     private void handleLogout(String tag) {
         state = ImapState.LOGOUT;
-        out.println("* BYE IMAP4rev2 Server logging out");
-        out.println(tag + " OK LOGOUT completed");
+        sendResponse("* BYE IMAP4rev2 Server logging out");
+        sendResponse(tag + " OK LOGOUT completed");
     }
 
     // ===================== Flag Helpers =====================
@@ -423,7 +521,7 @@ class ImapSession extends Thread {
                     }
                 }
             } catch (IOException e) {
-                System.err.println("Error reading flags: " + e.getMessage());
+                if (observer != null) observer.logEvent("Erreur lecture flags: " + e.getMessage());
             }
         }
         return flags;
@@ -454,7 +552,7 @@ class ImapSession extends Thread {
                 writer.println(flag);
             }
         } catch (IOException e) {
-            System.err.println("Error writing flags: " + e.getMessage());
+            if (observer != null) observer.logEvent("Erreur écriture flags: " + e.getMessage());
         }
     }
 
@@ -470,7 +568,7 @@ class ImapSession extends Thread {
             }
             sb.append("\r\n"); // Blank line terminates headers
         } catch (IOException e) {
-            System.err.println("Error reading headers: " + e.getMessage());
+            if (observer != null) observer.logEvent("Erreur lecture headers: " + e.getMessage());
         }
         return sb.toString();
     }
@@ -488,7 +586,7 @@ class ImapSession extends Thread {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading body: " + e.getMessage());
+             if (observer != null) observer.logEvent("Erreur lecture body: " + e.getMessage());
         }
         return sb.toString();
     }
@@ -501,7 +599,7 @@ class ImapSession extends Thread {
                 sb.append(line).append("\r\n");
             }
         } catch (IOException e) {
-            System.err.println("Error reading file: " + e.getMessage());
+            if (observer != null) observer.logEvent("Erreur lecture contenu texte: " + e.getMessage());
         }
         return sb.toString();
     }
@@ -518,7 +616,7 @@ class ImapSession extends Thread {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error searching headers: " + e.getMessage());
+            if (observer != null) observer.logEvent("Erreur recherche headers: " + e.getMessage());
         }
         return false;
     }

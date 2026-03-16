@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration Serveur SMTP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { background-color: #1e1e2f; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background-color: #27293d; border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .header-title { font-weight: 600; font-size: 1.5rem; color: #e14eca; }
+        .status-badge { font-size: 1rem; padding: 8px 15px; border-radius: 20px; }
+        .bg-running { background-color: #00f2c3 !important; color: #1d253b; font-weight: bold; }
+        .bg-stopped { background-color: #fd5d93 !important; color: #fff; font-weight: bold; }
+        .terminal {
+            background-color: #1d253b;
+            color: #50fa7b;
+            font-family: 'Courier New', Courier, monospace;
+            height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+            padding: 15px;
+            font-size: 0.9rem;
+            border: 1px solid #344675;
+        }
+        .stat-box {
+            text-align: center; padding: 20px; border-radius: 8px;
+            background: linear-gradient(0deg, #3358f4 0%, #1d8cf8 100%);
+            box-shadow: 0 4px 20px 0px rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(29, 140, 248, 0.4);
+        }
+        .stat-value { font-size: 2.5rem; font-weight: bold; margin: 0; }
+        .stat-label { font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; }
+        ::-webkit-scrollbar-thumb { background: #344675; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #1d8cf8; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h1 class="header-title">SMTP Server Admin</h1>
+            <p class="text-muted">Port par défaut: <span th:text="${port}">25</span></p>
+        </div>
+        <div class="col-md-6 text-end">
+            <span id="serverStatusTag" class="badge status-badge bg-stopped">ARRÊTÉ</span>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Controls -->
+        <div class="col-md-8">
+            <div class="card p-4 h-100">
+                <h5 class="mb-4">Panneau de Contrôle</h5>
+                <div class="d-flex gap-3">
+                    <button id="btnStart" class="btn btn-success flex-grow-1" onclick="startServer()">
+                        <i class="bi bi-play-fill"></i> Démarrer Serveur
+                    </button>
+                    <button id="btnStop" class="btn btn-danger flex-grow-1" onclick="stopServer()" disabled>
+                        <i class="bi bi-stop-fill"></i> Arrêter Serveur
+                    </button>
+                    <button id="btnClear" class="btn btn-secondary" onclick="clearLogs()">Effacer les logs</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="col-md-4">
+            <div class="stat-box h-100 d-flex flex-column justify-content-center">
+                <p class="stat-label">Clients Connectés</p>
+                <p id="clientCount" class="stat-value">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="card p-4 mb-5">
+        <h5 class="mb-3">Historique des communications (En direct)</h5>
+        <div id="terminalOutput" class="terminal">
+            <div><span style="color:#8be9fd;">[Système]</span> En attente du démarrage du serveur...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stompClient = null;
+
+    // Connect WebSocket
+    function connectWS() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null; // Disable debug logging in browser console
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/logs', function (message) {
+                appendLog(message.body);
+            });
+            stompClient.subscribe('/topic/clients', function (message) {
+                document.getElementById('clientCount').innerText = message.body;
+            });
+        });
+    }
+
+    // API calls
+    async function fetchStatus() {
+        try {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            updateUIState(data.running);
+            document.getElementById('clientCount').innerText = data.clientCount;
+        } catch (e) {
+            console.error("Erreur récupération statut", e);
+        }
+    }
+
+    async function startServer() {
+        try {
+            const res = await fetch('/api/start', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                updateUIState(true);
+            } else {
+                alert("Erreur: " + data.message);
+            }
+        } catch (e) {
+            alert("Impossible de contacter l'API.");
+        }
+    }
+
+    async function stopServer() {
+        try {
+            const res = await fetch('/api/stop', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                updateUIState(false);
+            } else {
+                alert("Erreur: " + data.message);
+            }
+        } catch (e) {
+            alert("Impossible de contacter l'API.");
+        }
+    }
+
+    // UI Updates
+    function updateUIState(isRunning) {
+        const btnStart = document.getElementById('btnStart');
+        const btnStop = document.getElementById('btnStop');
+        const statusTag = document.getElementById('serverStatusTag');
+        
+        btnStart.disabled = isRunning;
+        btnStop.disabled = !isRunning;
+        
+        if (isRunning) {
+            statusTag.innerText = "EN LIGNE";
+            statusTag.className = "badge status-badge bg-running";
+        } else {
+            statusTag.innerText = "ARRÊTÉ";
+            statusTag.className = "badge status-badge bg-stopped";
+        }
+    }
+
+    function appendLog(message) {
+        const terminal = document.getElementById('terminalOutput');
+        const div = document.createElement('div');
+        
+        // Coloration syntaxique basique
+        let formattedMsg = message;
+        if (formattedMsg.includes("INFO ->")) {
+            formattedMsg = `<span style="color:#8be9fd;">${formattedMsg}</span>`;
+        } else if (formattedMsg.includes("Serveur ->")) {
+            formattedMsg = `<span style="color:#ffb86c;">${formattedMsg}</span>`;
+        } else if (formattedMsg.includes("Client")) {
+            formattedMsg = `<span style="color:#f8f8f2;">${formattedMsg}</span>`;
+        }
+        
+        div.innerHTML = formattedMsg;
+        terminal.appendChild(div);
+        
+        // Auto-scroll to bottom
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+    
+    function clearLogs() {
+        const terminal = document.getElementById('terminalOutput');
+        terminal.innerHTML = '<div><span style="color:#8be9fd;">[Système]</span> Logs effacés.</div>';
+    }
+
+    // Init
+    window.onload = function() {
+        connectWS();
+        setInterval(fetchStatus, 2000); // Polling status every 2s
+        fetchStatus();
+    };
+</script>
+
+</body>
+</html>
