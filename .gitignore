@@ -31,11 +31,22 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-TP_Syst-mes_Distribu-s
-
-
 ### VS Code ###
 .vscode/
 
 ### Mac OS ###
 .DS_Store
+
+### Project-specific — DO NOT COMMIT these files ###
+
+# JWT secret key — contains cryptographic material
+mailserver/.jwt_secret
+
+# Plain-text password backup created by migration script
+mailserver/users.json.bak
+
+# Log files
+SMTP/logs/
+POP3/logs/
+IMAP/logs/
+logs/

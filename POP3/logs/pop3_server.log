@@ -1,0 +1,31 @@
+[2026-03-28 18:42:52] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-28 18:42:52] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-28 18:53:18] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 18:53:18] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-28 18:53:32] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> USER testuser
+[2026-03-28 18:53:32] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-28 18:53:44] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> PASS password123
+[2026-03-28 18:53:44] [ALADDIN] Serveur -> -ERR Invalid password or user not found
+[2026-03-28 18:53:44] [ALADDIN] INFO -> Échec auth RMI pour 'testuser'
+[2026-03-28 18:54:16] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> PASS 123456
+[2026-03-28 18:54:16] [ALADDIN] INFO -> Auth RMI réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 18:54:16] [ALADDIN] Serveur -> +OK Password accepted
+[2026-03-28 18:54:30] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> STAT
+[2026-03-28 18:54:30] [ALADDIN] Serveur -> +OK 1 158
+[2026-03-28 18:54:36] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> LIST
+[2026-03-28 18:54:36] [ALADDIN] Serveur -> +OK 1 messages
+[2026-03-28 18:54:36] [ALADDIN] Serveur -> 1 158
+[2026-03-28 18:54:36] [ALADDIN] Serveur -> .
+[2026-03-28 18:54:45] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RETR 1
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> +OK 158 octets
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> From: testuser@example.com
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> To: testuser@example.com
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> Date: sam., 28 mars 2026 18:47:48 +0100
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> 
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> 
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> Subject: Test TP Distribue
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> Ceci est le corps du message.
+[2026-03-28 18:54:45] [ALADDIN] Serveur -> .
+[2026-03-28 18:55:06] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 18:55:06] [ALADDIN] Serveur -> +OK POP3 server signing off
+[2026-03-28 18:55:06] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1

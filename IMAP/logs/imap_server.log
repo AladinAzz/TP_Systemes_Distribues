@@ -1,0 +1,21 @@
+[2026-03-28 18:42:55] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-28 18:42:55] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-28 18:57:07] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 18:57:07] [ALADDIN] Serveur -> * OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready
+[2026-03-28 18:57:25] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A1 LOGIN testuser 123456
+[2026-03-28 18:57:25] [ALADDIN] INFO -> Auth réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 18:57:25] [ALADDIN] Serveur -> A1 OK LOGIN completed
+[2026-03-28 18:57:35] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A2 SELECT INBOX
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> * 1 EXISTS
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> * 0 RECENT
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> * FLAGS (\Seen \Answered \Flagged \Deleted \Draft)
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> * OK [PERMANENTFLAGS (\Seen \Deleted)]
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> * OK [UNSEEN 1]
+[2026-03-28 18:57:35] [ALADDIN] Serveur -> A2 OK [READ-WRITE] SELECT completed
+[2026-03-28 18:57:54] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 FETCH 1 BODY[]
+[2026-03-28 18:57:54] [ALADDIN] Serveur -> * 1 FETCH (BODY[] {158}
+[2026-03-28 18:57:54] [ALADDIN] Serveur -> A3 OK FETCH completed
+[2026-03-28 18:58:12] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A[D4 LOGOUT
+[2026-03-28 18:58:12] [ALADDIN] Serveur -> * BYE IMAP4rev2 Server logging out
+[2026-03-28 18:58:12] [ALADDIN] Serveur -> A[D4 OK LOGOUT completed
+[2026-03-28 18:58:12] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1

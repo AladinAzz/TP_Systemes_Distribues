@@ -1,22 +1,17 @@
 {
-  "user": {
-    "username": "user1",
-    "password": "user1"
-  },
-  "alaaazzouz22@gmail.com": {
-    "username": "alaaazzouz22@gmail.com",
-    "password": "046241546"
-  },
   "testuser": {
     "username": "testuser",
-    "password": "123456"
+    "passwordHash": "5v/x4ZrTjqC24Bo4eUv2/2v/09KL3hmT1H6gjxXh4kc=",
+    "salt": "BhU0BdGOs4CwsRKxfWBHIw=="
   },
   "user1": {
     "username": "user1",
-    "password": "mdp123"
+    "passwordHash": "QnefwebvM1WeBYkj6uyNkPL90ZkfiFg9Ff3oiXNnZEc=",
+    "salt": "yVHnXRKRAWnkvHrLMPA5bw=="
   },
   "user2": {
     "username": "user2",
-    "password": "secret"
+    "passwordHash": "9V4yWlk4l42eQXIHL2ljcVVc5xxZZEwYpeIgQtJ2sGo=",
+    "salt": "1WiNgBbk9Ug+RkAbBUt07Q=="
   }
 }

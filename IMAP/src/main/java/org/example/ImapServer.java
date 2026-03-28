@@ -6,7 +6,6 @@ import java.rmi.Naming;
 import java.util.*;
 
 import org.example.rmi.IAuthService;
-
 import org.example.service.ServerObserver;
 
 public class ImapServer {
@@ -24,48 +23,42 @@ public class ImapServer {
     public void start() throws IOException {
         serverSocket = new ServerSocket(port);
         running = true;
-        if (observer != null) observer.logEvent("Serveur IMAP en écoute sur le port " + port);
+        if (observer != null)
+            observer.logEvent("Serveur IMAP en écoute sur le port " + port);
 
         while (running) {
             try {
-                Socket clientSocket = serverSocket.accept();
-                String clientIp = clientSocket.getInetAddress().getHostAddress();
-                if (observer != null) observer.logEvent("Nouvelle connexion client: " + clientIp);
-
-                ImapSession session = new ImapSession(clientSocket, observer, clientIp, this);
+                Socket client = serverSocket.accept();
+                String ip = client.getInetAddress().getHostAddress();
+                if (observer != null)
+                    observer.logEvent("Nouvelle connexion client: " + ip);
+                ImapSession session = new ImapSession(client, observer, ip, this);
                 activeSessions.add(session);
                 session.start();
             } catch (SocketException e) {
-                if (running) {
-                    if (observer != null) observer.logEvent("Erreur d'acceptation de socket: " + e.getMessage());
-                } else {
-                    if (observer != null) observer.logEvent("Boucle d'acceptation arrêtée.");
-                }
+                if (running && observer != null)
+                    observer.logEvent("Erreur d'acceptation: " + e.getMessage());
             }
         }
     }
-    
+
     public void stop() {
         running = false;
         try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
+            if (serverSocket != null && !serverSocket.isClosed())
                 serverSocket.close();
-            }
         } catch (IOException e) {
-            if (observer != null) observer.logEvent("Erreur lors de la fermeture du serveur: " + e.getMessage());
+            if (observer != null)
+                observer.logEvent("Erreur fermeture: " + e.getMessage());
         }
-        
-        // Fermer les connexions actives
         synchronized (activeSessions) {
-            for (ImapSession session : activeSessions) {
-                session.interruptSession();
-            }
+            activeSessions.forEach(ImapSession::interruptSession);
             activeSessions.clear();
         }
     }
-    
-    public void removeSession(ImapSession session) {
-        activeSessions.remove(session);
+
+    public void removeSession(ImapSession s) {
+        activeSessions.remove(s);
     }
 
     public static void main(String[] args) {
@@ -77,21 +70,25 @@ public class ImapServer {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 class ImapSession extends Thread {
-    private Socket socket;
+
+    // FIX 9 — cached RMI stub, looked up once per session
+    private IAuthService authService;
+
+    private final Socket socket;
     private BufferedReader in;
+    // FIX 6 — use a raw OutputStream so we can write literal bytes correctly
+    private OutputStream rawOut;
     private PrintWriter out;
     private final ServerObserver observer;
     private final String clientIp;
     private final ImapServer server;
     private volatile boolean interrupted = false;
 
-    // Finite State Machine for IMAP session (RFC 9051)
     private enum ImapState {
-        NOT_AUTHENTICATED,
-        AUTHENTICATED,
-        SELECTED,
-        LOGOUT
+        NOT_AUTHENTICATED, AUTHENTICATED, SELECTED, LOGOUT
     }
 
     private ImapState state;
@@ -103,54 +100,101 @@ class ImapSession extends Thread {
     public ImapSession(Socket socket) {
         this(socket, null, socket.getInetAddress().getHostAddress(), null);
     }
-    
-    public ImapSession(Socket socket, ServerObserver observer, String clientIp, ImapServer server) {
+
+    public ImapSession(Socket socket, ServerObserver observer,
+            String clientIp, ImapServer server) {
         this.socket = socket;
         this.observer = observer;
         this.clientIp = clientIp;
         this.server = server;
         this.state = ImapState.NOT_AUTHENTICATED;
     }
-    
+
+    // FIX 9 — single RMI lookup per session
+    private IAuthService getAuthService() {
+        if (authService == null) {
+            try {
+                authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+            } catch (Exception e) {
+                if (observer != null)
+                    observer.logEvent("Erreur RMI lookup: " + e.getMessage());
+            }
+        }
+        return authService;
+    }
+
     public void interruptSession() {
         interrupted = true;
         try {
-            if (socket != null && !socket.isClosed()) {
+            if (socket != null && !socket.isClosed())
                 socket.close();
-            }
-        } catch (IOException e) {
-            // Ignorer
+        } catch (IOException ignored) {
         }
         this.interrupt();
     }
-    
-    private void sendResponse(String response) {
-        if (!interrupted) {
-            out.println(response);
-            if (observer != null) observer.logResponse(response);
+
+    private void sendLine(String line) {
+        if (interrupted)
+            return;
+        try {
+            rawOut.write((line + "\r\n").getBytes("UTF-8"));
+            rawOut.flush();
+        } catch (IOException e) {
+            interrupted = true;
         }
+        if (observer != null)
+            observer.logResponse(line);
+    }
+
+    /**
+     * FIX 6 — Sends an IMAP literal block with correct framing:
+     *
+     * * seqNum FETCH (BODY[xxx] {N}\r\n
+     * <N bytes of content>\r\n
+     * )\r\n
+     * tag OK FETCH completed\r\n
+     *
+     * Using sendResponse() for both the prefix and the content was wrong because
+     * PrintWriter.println() appends a platform newline AFTER the content, making
+     * the byte count in {N} incorrect and placing ")" on the wrong line.
+     */
+    private void sendLiteral(String tag, int seqNum, String fetchItem,
+            String content, String flagsIfAny) throws IOException {
+        if (interrupted)
+            return;
+        byte[] contentBytes = content.getBytes("UTF-8");
+        String prefix = "* " + seqNum + " FETCH (" + fetchItem +
+                " {" + contentBytes.length + "}";
+        sendLine(prefix);
+        rawOut.write(contentBytes);
+        rawOut.write(("\r\n)").getBytes("UTF-8"));
+        if (flagsIfAny != null) {
+            rawOut.write(("\r\n* " + seqNum + " FETCH (FLAGS (" + flagsIfAny + "))").getBytes("UTF-8"));
+        }
+        rawOut.write("\r\n".getBytes("UTF-8"));
+        rawOut.flush();
+        sendLine(tag + " OK FETCH completed");
     }
 
     @Override
     public void run() {
         try {
-            if (observer != null && observer instanceof org.example.service.ImapServerService) {
+            if (observer instanceof org.example.service.ImapServerService)
                 ((org.example.service.ImapServerService) observer).incrementClient();
-            }
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
 
-            // RFC 9051 - Server greeting
-            sendResponse("* OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready");
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            rawOut = socket.getOutputStream();
+            out = new PrintWriter(rawOut, true);
+
+            sendLine("* OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready");
 
             String line;
             while (!interrupted && (line = in.readLine()) != null) {
-                if (observer != null) observer.logRequest(clientIp, line);
-
-                // Parse tag and command
+                if (observer != null)
+                    observer.logRequest(clientIp, line);
                 String[] parts = line.split(" ", 3);
                 if (parts.length < 2) {
-                    sendResponse("* BAD Invalid command format");
+                    sendLine("* BAD Invalid command format");
                     continue;
                 }
 
@@ -184,141 +228,140 @@ class ImapSession extends Thread {
                         handleLogout(tag);
                         return;
                     default:
-                        sendResponse(tag + " BAD Unknown command");
-                        break;
+                        sendLine(tag + " BAD Unknown command");
                 }
             }
         } catch (IOException e) {
-            if (!interrupted && observer != null) {
-                observer.logEvent("Erreur session " + clientIp + " : " + e.getMessage());
-            }
+            if (!interrupted && observer != null)
+                observer.logEvent("Erreur session " + clientIp + ": " + e.getMessage());
         } finally {
-            try { socket.close(); } catch (IOException e) { /* ignore */ }
-            if (server != null) server.removeSession(this);
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+            }
+            if (server != null)
+                server.removeSession(this);
             if (observer != null) {
                 observer.logEvent("Déconnexion client: " + clientIp);
-                if (observer instanceof org.example.service.ImapServerService) {
+                if (observer instanceof org.example.service.ImapServerService)
                     ((org.example.service.ImapServerService) observer).decrementClient();
-                }
             }
         }
     }
 
-    // ===================== Command Handlers =====================
+    // ── Command handlers ──────────────────────────────────────────────────────
 
     private void handleCapability(String tag) {
-        sendResponse("* CAPABILITY IMAP4rev2");
-        sendResponse(tag + " OK CAPABILITY completed");
+        sendLine("* CAPABILITY IMAP4rev2");
+        sendLine(tag + " OK CAPABILITY completed");
     }
 
     private void handleNoop(String tag) {
-        sendResponse(tag + " OK NOOP completed");
+        sendLine(tag + " OK NOOP completed");
     }
 
     private void handleLogin(String tag, String args) {
         if (state != ImapState.NOT_AUTHENTICATED) {
-            sendResponse(tag + " BAD Already authenticated");
+            sendLine(tag + " BAD Already authenticated");
             return;
         }
-
         String[] parts = args.split(" ", 2);
         if (parts.length < 2) {
-            sendResponse(tag + " BAD LOGIN requires username and password");
+            sendLine(tag + " BAD LOGIN requires username and password");
             return;
         }
 
         String user = parts[0].replaceAll("\"", "");
         String pass = parts[1].replaceAll("\"", "");
 
-        // --- Vérification RMI ---
-        try {
-            IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
-            String token = authService.authenticate(user, pass);
-            if (token == null) {
-                sendResponse(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
-                if (observer != null) observer.logEvent("Échec auth RMI pour '" + user + "'");
-                return;
-            }
-            if (observer != null) observer.logEvent("Auth RMI réussie pour '" + user + "' (JWT: " + token.substring(0, 10) + "...)");
-        } catch (Exception e) {
-            if (observer != null) observer.logEvent("Erreur RMI (LOGIN): " + e.getMessage());
-            sendResponse(tag + " BAD Internal server error (RMI)");
+        // FIX 9 — use cached RMI stub
+        IAuthService svc = getAuthService();
+        if (svc == null) {
+            sendLine(tag + " BAD Internal server error (RMI)");
             return;
         }
-        // ------------------------
 
-        File mailserverDir = new File("mailserver");
-        if (!mailserverDir.exists()) mailserverDir = new File("../mailserver");
+        try {
+            String token = svc.authenticate(user, pass);
+            if (token == null) {
+                sendLine(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
+                if (observer != null)
+                    observer.logEvent("Échec auth pour '" + user + "'");
+                return;
+            }
+            if (observer != null)
+                observer.logEvent("Auth réussie pour '" + user +
+                        "' (JWT: " + token.substring(0, Math.min(10, token.length())) + "...)");
+        } catch (Exception e) {
+            if (observer != null)
+                observer.logEvent("Erreur RMI (LOGIN): " + e.getMessage());
+            sendLine(tag + " BAD Internal server error (RMI)");
+            return;
+        }
+
+        File mailserverDir = resolveMailserverDir();
         File dir = new File(mailserverDir, user);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists())
+            dir.mkdirs();
 
         username = user;
         userDir = dir;
         state = ImapState.AUTHENTICATED;
-        sendResponse(tag + " OK LOGIN completed");
+        sendLine(tag + " OK LOGIN completed");
     }
 
     private void handleSelect(String tag, String args) {
         if (state == ImapState.NOT_AUTHENTICATED) {
-            sendResponse(tag + " BAD Command requires authentication");
+            sendLine(tag + " BAD Command requires authentication");
             return;
         }
-
         String mailbox = args.trim().replaceAll("\"", "");
-
-        // Only INBOX is supported (as per assignment spec)
         if (!mailbox.equalsIgnoreCase("INBOX")) {
-            sendResponse(tag + " NO [NONEXISTENT] Mailbox does not exist");
+            sendLine(tag + " NO [NONEXISTENT] Mailbox does not exist");
             return;
         }
 
-        // Load emails (only .txt files, exclude .flags companion files)
         File[] files = userDir.listFiles((d, name) -> name.endsWith(".txt"));
-        if (files == null) {
-            emails = new ArrayList<>();
-        } else {
-            Arrays.sort(files);
-            emails = new ArrayList<>(Arrays.asList(files));
-        }
+        emails = files != null
+                ? new ArrayList<>(Arrays.asList(files))
+                : new ArrayList<>();
+        Collections.sort(emails);
 
         selectedMailbox = mailbox;
         state = ImapState.SELECTED;
 
-        // Count unseen messages
-        int unseen = 0;
-        int firstUnseen = -1;
+        int unseen = 0, firstUnseen = -1;
         for (int i = 0; i < emails.size(); i++) {
             if (!getFlags(emails.get(i)).contains("\\Seen")) {
                 unseen++;
-                if (firstUnseen == -1) firstUnseen = i + 1;
+                if (firstUnseen == -1)
+                    firstUnseen = i + 1;
             }
         }
 
-        // RFC 9051 - SELECT response
-        sendResponse("* " + emails.size() + " EXISTS");
-        sendResponse("* 0 RECENT");
-        sendResponse("* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)");
-        sendResponse("* OK [PERMANENTFLAGS (\\Seen \\Deleted)]");
-        if (firstUnseen > 0) {
-            sendResponse("* OK [UNSEEN " + firstUnseen + "]");
-        }
-        sendResponse(tag + " OK [READ-WRITE] SELECT completed");
+        sendLine("* " + emails.size() + " EXISTS");
+        sendLine("* 0 RECENT");
+        sendLine("* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)");
+        sendLine("* OK [PERMANENTFLAGS (\\Seen \\Deleted)]");
+        if (firstUnseen > 0)
+            sendLine("* OK [UNSEEN " + firstUnseen + "]");
+        sendLine(tag + " OK [READ-WRITE] SELECT completed");
     }
 
+    /**
+     * FIX 6 — All literal-bearing FETCH responses now go through sendLiteral()
+     * which writes the exact byte count and correct framing.
+     */
     private void handleFetch(String tag, String args) {
         if (state != ImapState.SELECTED) {
-            if (state == ImapState.NOT_AUTHENTICATED) {
-                sendResponse(tag + " BAD Command requires authentication");
-            } else {
-                sendResponse(tag + " BAD No mailbox selected");
-            }
+            sendLine(tag + (state == ImapState.NOT_AUTHENTICATED
+                    ? " BAD Command requires authentication"
+                    : " BAD No mailbox selected"));
             return;
         }
-
-        // Parse: <sequence> <data items>
         String[] parts = args.split(" ", 2);
         if (parts.length < 2) {
-            sendResponse(tag + " BAD FETCH requires sequence number and data items");
+            sendLine(tag + " BAD FETCH requires sequence and data items");
             return;
         }
 
@@ -326,79 +369,60 @@ class ImapSession extends Thread {
         try {
             seqNum = Integer.parseInt(parts[0]);
         } catch (NumberFormatException e) {
-            sendResponse(tag + " BAD Invalid sequence number");
+            sendLine(tag + " BAD Invalid sequence number");
             return;
         }
 
         if (seqNum < 1 || seqNum > emails.size()) {
-            sendResponse(tag + " NO No such message");
+            sendLine(tag + " NO No such message");
             return;
         }
 
         File emailFile = emails.get(seqNum - 1);
         String dataItems = parts[1].trim();
-
-        // Remove surrounding parentheses
-        if (dataItems.startsWith("(") && dataItems.endsWith(")")) {
+        if (dataItems.startsWith("(") && dataItems.endsWith(")"))
             dataItems = dataItems.substring(1, dataItems.length() - 1);
-        }
 
-        String upperItems = dataItems.toUpperCase();
+        String upper = dataItems.toUpperCase();
 
-        if (upperItems.equals("FLAGS")) {
-            // Return flags only
-            List<String> flags = getFlags(emailFile);
-            sendResponse("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", flags) + "))");
+        try {
+            if (upper.equals("FLAGS")) {
+                List<String> flags = getFlags(emailFile);
+                sendLine("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", flags) + "))");
+                sendLine(tag + " OK FETCH completed");
 
-        } else if (upperItems.equals("BODY[HEADER]") || upperItems.equals("BODY.PEEK[HEADER]")) {
-            // Return headers only
-            String headers = getHeaders(emailFile);
-            byte[] headerBytes = headers.getBytes();
-            sendResponse("* " + seqNum + " FETCH (BODY[HEADER] {" + headerBytes.length + "}");
-            sendResponse(headers + ")"); // Simplifié pour utiliser sendResponse au lieu de out.print & out.println
+            } else if (upper.equals("BODY[HEADER]") || upper.equals("BODY.PEEK[HEADER]")) {
+                String headers = getHeaders(emailFile);
+                sendLiteral(tag, seqNum, "BODY[HEADER]", headers, null);
 
-        } else if (upperItems.equals("BODY[]") || upperItems.equals("RFC822")
-                || upperItems.equals("BODY.PEEK[]")) {
-            // Return full message
-            String content = getFullContent(emailFile);
-            byte[] contentBytes = content.getBytes();
-            sendResponse("* " + seqNum + " FETCH (BODY[] {" + contentBytes.length + "}");
-            sendResponse(content + ")");
-            // Auto-set \Seen flag if not using PEEK
-            if (!upperItems.contains("PEEK")) {
-                addFlag(emailFile, "\\Seen");
+            } else if (upper.equals("BODY[]") || upper.equals("RFC822") || upper.equals("BODY.PEEK[]")) {
+                String content = getFullContent(emailFile);
+                if (!upper.contains("PEEK"))
+                    addFlag(emailFile, "\\Seen");
+                sendLiteral(tag, seqNum, "BODY[]", content, null);
+
+            } else if (upper.equals("BODY[TEXT]") || upper.equals("BODY.PEEK[TEXT]")) {
+                String body = getBody(emailFile);
+                sendLiteral(tag, seqNum, "BODY[TEXT]", body, null);
+
+            } else {
+                sendLine(tag + " BAD Unknown FETCH data item: " + dataItems);
             }
-
-        } else if (upperItems.equals("BODY[TEXT]") || upperItems.equals("BODY.PEEK[TEXT]")) {
-            // Return body only
-            String body = getBody(emailFile);
-            byte[] bodyBytes = body.getBytes();
-            sendResponse("* " + seqNum + " FETCH (BODY[TEXT] {" + bodyBytes.length + "}");
-            sendResponse(body + ")");
-
-        } else {
-            sendResponse(tag + " BAD Unknown FETCH data item: " + dataItems);
-            return;
+        } catch (IOException e) {
+            sendLine(tag + " NO Internal error reading message");
         }
-
-        sendResponse(tag + " OK FETCH completed");
     }
 
     private void handleStore(String tag, String args) {
         if (state != ImapState.SELECTED) {
-            if (state == ImapState.NOT_AUTHENTICATED) {
-                sendResponse(tag + " BAD Command requires authentication");
-            } else {
-                sendResponse(tag + " BAD No mailbox selected");
-            }
+            sendLine(tag + (state == ImapState.NOT_AUTHENTICATED
+                    ? " BAD Command requires authentication"
+                    : " BAD No mailbox selected"));
             return;
         }
-
-        // Parse: <sequence> <action> <flags>
-        // e.g., "1 +FLAGS (\Seen)", "1 -FLAGS (\Seen)", "1 FLAGS (\Seen)"
         String[] parts = args.split(" ", 3);
         if (parts.length < 3) {
-            sendResponse(tag + " BAD STORE requires sequence, action, and flags");
+            sendLine(tag + " BAD STORE requires sequence, action, and flags");
             return;
         }
 
@@ -406,138 +430,115 @@ class ImapSession extends Thread {
         try {
             seqNum = Integer.parseInt(parts[0]);
         } catch (NumberFormatException e) {
-            sendResponse(tag + " BAD Invalid sequence number");
+            sendLine(tag + " BAD Invalid sequence number");
             return;
         }
 
         if (seqNum < 1 || seqNum > emails.size()) {
-            sendResponse(tag + " NO No such message");
+            sendLine(tag + " NO No such message");
             return;
         }
 
         String action = parts[1].toUpperCase();
         String flagStr = parts[2].trim();
-
-        // Extract flags from parentheses
-        if (flagStr.startsWith("(") && flagStr.endsWith(")")) {
+        if (flagStr.startsWith("(") && flagStr.endsWith(")"))
             flagStr = flagStr.substring(1, flagStr.length() - 1);
-        }
-        List<String> newFlags = Arrays.asList(flagStr.split("\\s+"));
+        List<String> newFlags = new ArrayList<>(Arrays.asList(flagStr.split("\\s+")));
 
         File emailFile = emails.get(seqNum - 1);
-
         switch (action) {
             case "+FLAGS":
             case "+FLAGS.SILENT":
-                for (String flag : newFlags) {
-                    addFlag(emailFile, flag);
-                }
+                newFlags.forEach(f -> addFlag(emailFile, f));
                 break;
             case "-FLAGS":
             case "-FLAGS.SILENT":
-                for (String flag : newFlags) {
-                    removeFlag(emailFile, flag);
-                }
+                newFlags.forEach(f -> removeFlag(emailFile, f));
                 break;
             case "FLAGS":
             case "FLAGS.SILENT":
-                // Ne plus forcer une List immuable pour que remove/add fonctionne après
-                setFlags(emailFile, new ArrayList<>(newFlags));
+                setFlags(emailFile, newFlags);
                 break;
             default:
-                sendResponse(tag + " BAD Unknown STORE action");
+                sendLine(tag + " BAD Unknown STORE action");
                 return;
         }
 
-        // Send updated flags back (unless SILENT)
         if (!action.contains("SILENT")) {
-            List<String> currentFlags = getFlags(emailFile);
-            sendResponse("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", currentFlags) + "))");
+            List<String> current = getFlags(emailFile);
+            sendLine("* " + seqNum + " FETCH (FLAGS (" + String.join(" ", current) + "))");
         }
-
-        sendResponse(tag + " OK STORE completed");
+        sendLine(tag + " OK STORE completed");
     }
 
     private void handleSearch(String tag, String args) {
         if (state != ImapState.SELECTED) {
-            if (state == ImapState.NOT_AUTHENTICATED) {
-                sendResponse(tag + " BAD Command requires authentication");
-            } else {
-                sendResponse(tag + " BAD No mailbox selected");
-            }
+            sendLine(tag + (state == ImapState.NOT_AUTHENTICATED
+                    ? " BAD Command requires authentication"
+                    : " BAD No mailbox selected"));
             return;
         }
-
         String[] parts = args.split(" ", 2);
         String criteria = parts[0].toUpperCase();
         String value = parts.length > 1 ? parts[1].replaceAll("\"", "") : "";
 
         List<Integer> results = new ArrayList<>();
-
         for (int i = 0; i < emails.size(); i++) {
-            File emailFile = emails.get(i);
-
+            File f = emails.get(i);
+            boolean match = false;
             switch (criteria) {
                 case "ALL":
-                    results.add(i + 1);
+                    match = true;
                     break;
                 case "FROM":
-                    if (headerContains(emailFile, "From:", value)) {
-                        results.add(i + 1);
-                    }
+                    match = headerContains(f, "From:", value);
                     break;
                 case "SUBJECT":
-                    if (headerContains(emailFile, "Subject:", value)) {
-                        results.add(i + 1);
-                    }
+                    match = headerContains(f, "Subject:", value);
                     break;
                 case "UNSEEN":
-                    if (!getFlags(emailFile).contains("\\Seen")) {
-                        results.add(i + 1);
-                    }
+                    match = !getFlags(f).contains("\\Seen");
                     break;
                 case "SEEN":
-                    if (getFlags(emailFile).contains("\\Seen")) {
-                        results.add(i + 1);
-                    }
+                    match = getFlags(f).contains("\\Seen");
                     break;
                 default:
-                    sendResponse(tag + " BAD Unknown search criteria");
+                    sendLine(tag + " BAD Unknown search criteria");
                     return;
             }
+            if (match)
+                results.add(i + 1);
         }
 
         StringBuilder sb = new StringBuilder("* SEARCH");
-        for (int seq : results) {
-            sb.append(" ").append(seq);
-        }
-        sendResponse(sb.toString());
-        sendResponse(tag + " OK SEARCH completed");
+        results.forEach(n -> sb.append(" ").append(n));
+        sendLine(sb.toString());
+        sendLine(tag + " OK SEARCH completed");
     }
 
     private void handleLogout(String tag) {
         state = ImapState.LOGOUT;
-        sendResponse("* BYE IMAP4rev2 Server logging out");
-        sendResponse(tag + " OK LOGOUT completed");
+        sendLine("* BYE IMAP4rev2 Server logging out");
+        sendLine(tag + " OK LOGOUT completed");
     }
 
-    // ===================== Flag Helpers =====================
+    // ── Flag helpers ──────────────────────────────────────────────────────────
 
     private List<String> getFlags(File emailFile) {
         File flagFile = new File(emailFile.getAbsolutePath() + ".flags");
         List<String> flags = new ArrayList<>();
-        if (flagFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(flagFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.isEmpty()) {
-                        flags.add(line);
-                    }
-                }
-            } catch (IOException e) {
-                if (observer != null) observer.logEvent("Erreur lecture flags: " + e.getMessage());
+        if (!flagFile.exists())
+            return flags;
+        try (BufferedReader r = new BufferedReader(new FileReader(flagFile))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty())
+                    flags.add(line);
             }
+        } catch (IOException e) {
+            if (observer != null)
+                observer.logEvent("Erreur lecture flags: " + e.getMessage());
         }
         return flags;
     }
@@ -562,77 +563,78 @@ class ImapSession extends Thread {
 
     private void writeFlags(File emailFile, List<String> flags) {
         File flagFile = new File(emailFile.getAbsolutePath() + ".flags");
-        try (PrintWriter writer = new PrintWriter(new FileWriter(flagFile))) {
-            for (String flag : flags) {
-                writer.println(flag);
-            }
+        try (PrintWriter w = new PrintWriter(new FileWriter(flagFile))) {
+            flags.forEach(w::println);
         } catch (IOException e) {
-            if (observer != null) observer.logEvent("Erreur écriture flags: " + e.getMessage());
+            if (observer != null)
+                observer.logEvent("Erreur écriture flags: " + e.getMessage());
         }
     }
 
-    // ===================== Email Content Helpers =====================
+    // ── Content helpers ───────────────────────────────────────────────────────
 
-    private String getHeaders(File emailFile) {
+    private String getHeaders(File f) throws IOException {
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(emailFile))) {
+        try (BufferedReader r = new BufferedReader(new FileReader(f))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) break; // Headers end at first blank line
+            while ((line = r.readLine()) != null) {
+                if (line.trim().isEmpty())
+                    break;
                 sb.append(line).append("\r\n");
             }
-            sb.append("\r\n"); // Blank line terminates headers
-        } catch (IOException e) {
-            if (observer != null) observer.logEvent("Erreur lecture headers: " + e.getMessage());
+            sb.append("\r\n");
         }
         return sb.toString();
     }
 
-    private String getBody(File emailFile) {
+    private String getBody(File f) throws IOException {
         StringBuilder sb = new StringBuilder();
         boolean inBody = false;
-        try (BufferedReader reader = new BufferedReader(new FileReader(emailFile))) {
+        try (BufferedReader r = new BufferedReader(new FileReader(f))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                if (inBody) {
+            while ((line = r.readLine()) != null) {
+                if (inBody)
                     sb.append(line).append("\r\n");
-                } else if (line.trim().isEmpty()) {
+                else if (line.trim().isEmpty())
                     inBody = true;
-                }
             }
-        } catch (IOException e) {
-             if (observer != null) observer.logEvent("Erreur lecture body: " + e.getMessage());
         }
         return sb.toString();
     }
 
-    private String getFullContent(File emailFile) {
+    private String getFullContent(File f) throws IOException {
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(emailFile))) {
+        try (BufferedReader r = new BufferedReader(new FileReader(f))) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = r.readLine()) != null)
                 sb.append(line).append("\r\n");
-            }
-        } catch (IOException e) {
-            if (observer != null) observer.logEvent("Erreur lecture contenu texte: " + e.getMessage());
         }
         return sb.toString();
     }
 
-    private boolean headerContains(File emailFile, String headerName, String value) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(emailFile))) {
+    private boolean headerContains(File f, String headerName, String value) {
+        try (BufferedReader r = new BufferedReader(new FileReader(f))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) break; // Only search in headers
-                if (line.toLowerCase().startsWith(headerName.toLowerCase())) {
-                    if (line.toLowerCase().contains(value.toLowerCase())) {
-                        return true;
-                    }
-                }
+            while ((line = r.readLine()) != null) {
+                if (line.trim().isEmpty())
+                    break;
+                if (line.toLowerCase().startsWith(headerName.toLowerCase()) &&
+                        line.toLowerCase().contains(value.toLowerCase()))
+                    return true;
             }
         } catch (IOException e) {
-            if (observer != null) observer.logEvent("Erreur recherche headers: " + e.getMessage());
+            if (observer != null)
+                observer.logEvent("Erreur recherche headers: " + e.getMessage());
         }
         return false;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private File resolveMailserverDir() {
+        File d = new File("mailserver");
+        if (!d.exists())
+            d = new File("../mailserver");
+        return d;
     }
 }

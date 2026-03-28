@@ -29,3 +29,26 @@
 [2026-03-16 14:43:50] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<alaaazzouz22@gmail.com>
 [2026-03-16 14:43:50] [ALADDIN] Serveur -> 550 User unknown / Non autorisé
 [2026-03-16 14:43:50] [ALADDIN] INFO -> Rejet SMTP: L'utilisateur 'alaaazzouz22' n'existe pas dans le registre RMI.
+[2026-03-28 18:42:42] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-28 18:42:42] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-28 18:45:00] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 18:45:00] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-28 18:45:23] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> HELO localhost
+[2026-03-28 18:45:23] [ALADDIN] Serveur -> 250 Hello localhost
+[2026-03-28 18:45:45] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<testuser@example.com>
+[2026-03-28 18:45:45] [ALADDIN] INFO -> Erreur RMI lookup: Connection refused to host: localhost; nested exception is: 
+	java.net.ConnectException: Connection refused: connect
+[2026-03-28 18:45:45] [ALADDIN] Serveur -> 451 Local error: RMI unavailable
+[2026-03-28 18:46:21] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<testuser@example.com>
+[2026-03-28 18:46:21] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 18:46:54] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<testuser@example.com>
+[2026-03-28 18:46:54] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 18:47:08] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> Subject: Test TP Distribué
+[2026-03-28 18:47:08] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-28 18:47:15] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> DATA
+[2026-03-28 18:47:15] [ALADDIN] Serveur -> 354 Start mail input; end with <CRLF>.<CRLF>
+[2026-03-28 18:47:48] [ALADDIN] INFO -> Email stocké pour testuser@example.com dans 20260328_184748.txt
+[2026-03-28 18:47:48] [ALADDIN] Serveur -> 250 OK: Message accepted for delivery
+[2026-03-28 18:47:56] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 18:47:56] [ALADDIN] Serveur -> 221 smtp.example.com Service closing transmission channel
+[2026-03-28 18:47:56] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
