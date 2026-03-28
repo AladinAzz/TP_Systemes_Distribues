@@ -1,7 +1,10 @@
 package org.example;
 import java.io.*;
 import java.net.*;
+import java.rmi.Naming;
 import java.util.*;
+
+import org.example.rmi.IAuthService;
 
 import org.example.service.ServerObserver;
 
@@ -191,19 +194,8 @@ class Pop3Session extends Thread {
     }
 
     private void handleUser(String arg) {
-        File mailserverDir = new File("mailserver");
-        if (!mailserverDir.exists()) {
-            mailserverDir = new File("../mailserver");
-        }
-        
-        File dir = new File(mailserverDir, arg);
-        if (dir.exists() && dir.isDirectory()) {
-            username = arg;
-            userDir = dir;
-            sendResponse("+OK User accepted");
-        } else {
-            sendResponse("-ERR User not found");
-        }
+        username = arg;
+        sendResponse("+OK User accepted, waiting for password");
     }
 
     private void handlePass(String arg) {
@@ -211,7 +203,29 @@ class Pop3Session extends Thread {
             sendResponse("-ERR USER required first");
             return;
         }
-        // Pour simplifier, on suppose que "userDir" est le dossier de l'utilisateur déjà défini
+        
+        // --- Vérification RMI ---
+        try {
+            IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+            String token = authService.authenticate(username, arg);
+            if (token == null) {
+                sendResponse("-ERR Invalid password or user not found");
+                if (observer != null) observer.logEvent("Échec auth RMI pour '" + username + "'");
+                return;
+            }
+            if (observer != null) observer.logEvent("Auth RMI réussie pour '" + username + "' (JWT: " + token.substring(0, 10) + "...)");
+        } catch (Exception e) {
+            if (observer != null) observer.logEvent("Erreur RMI (PASS): " + e.getMessage());
+            sendResponse("-ERR Internal server error (RMI)");
+            return;
+        }
+        // ------------------------
+
+        File mailserverDir = new File("mailserver");
+        if (!mailserverDir.exists()) mailserverDir = new File("../mailserver");
+        userDir = new File(mailserverDir, username);
+        if (!userDir.exists()) userDir.mkdirs();
+
         authenticated = true;
         // Chargez les fichiers du répertoire dans une ArrayList mutable
         // Filter only .txt files (exclude .flags companion files used by IMAP)

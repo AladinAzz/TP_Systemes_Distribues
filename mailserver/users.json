@@ -1,6 +1,22 @@
 {
-    "user": {
-        "username": "user1",
-        "password": "user1"
-    }
+  "user": {
+    "username": "user1",
+    "password": "user1"
+  },
+  "alaaazzouz22@gmail.com": {
+    "username": "alaaazzouz22@gmail.com",
+    "password": "046241546"
+  },
+  "testuser": {
+    "username": "testuser",
+    "password": "123456"
+  },
+  "user1": {
+    "username": "user1",
+    "password": "mdp123"
+  },
+  "user2": {
+    "username": "user2",
+    "password": "secret"
+  }
 }

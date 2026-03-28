@@ -13,6 +13,9 @@
         <module>SMTP</module>
         <module>POP3</module>
         <module>IMAP</module>
+        <module>Auth-API</module>
+        <module>Auth-Server</module>
+        <module>Auth-Client</module>
     </modules>
 
     <properties>

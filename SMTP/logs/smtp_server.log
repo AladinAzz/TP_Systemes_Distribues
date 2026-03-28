@@ -1,0 +1,31 @@
+[2026-03-16 14:37:42] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-16 14:37:42] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-16 14:38:06] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-16 14:38:06] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-16 14:38:41] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> mail from : alaaazzouz22@gmail.com
+[2026-03-16 14:38:41] [ALADDIN] Serveur -> 503 Bad sequence of commands
+[2026-03-16 14:39:21] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:alaaazzouz22@gmail.com
+[2026-03-16 14:39:21] [ALADDIN] Serveur -> 503 Bad sequence of commands
+[2026-03-16 14:39:34] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> mail from alaaazzouz22
+[2026-03-16 14:39:34] [ALADDIN] Serveur -> 503 Bad sequence of commands
+[2026-03-16 14:40:34] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> EHLO alaaazzouz22@gmail.com
+[2026-03-16 14:40:34] [ALADDIN] Serveur -> 250-smtp.example.com Hello alaaazzouz22@gmail.com
+[2026-03-16 14:40:34] [ALADDIN] Serveur -> 250 OK
+[2026-03-16 14:40:42] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> M
+[2026-03-16 14:40:42] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-16 14:40:50] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM: Alaaa
+[2026-03-16 14:40:50] [ALADDIN] Serveur -> 501 Syntax error in parameters or arguments
+[2026-03-16 14:40:54] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> [A
+[2026-03-16 14:40:54] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-16 14:41:07] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM: alaaazzouz22@gmail.com
+[2026-03-16 14:41:07] [ALADDIN] Serveur -> 501 Syntax error in parameters or arguments
+[2026-03-16 14:41:19] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> 
+[2026-03-16 14:41:19] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-16 14:41:28] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> [AMAIL FROM:alaaazzouz22@gmail.com
+[2026-03-16 14:41:28] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-16 14:42:03] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<alaaazzouz22@gmail.com>
+[2026-03-16 14:42:03] [ALADDIN] Serveur -> 550 User unknown / Non autorisé
+[2026-03-16 14:42:03] [ALADDIN] INFO -> Rejet SMTP: L'utilisateur 'alaaazzouz22' n'existe pas dans le registre RMI.
+[2026-03-16 14:43:50] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<alaaazzouz22@gmail.com>
+[2026-03-16 14:43:50] [ALADDIN] Serveur -> 550 User unknown / Non autorisé
+[2026-03-16 14:43:50] [ALADDIN] INFO -> Rejet SMTP: L'utilisateur 'alaaazzouz22' n'existe pas dans le registre RMI.

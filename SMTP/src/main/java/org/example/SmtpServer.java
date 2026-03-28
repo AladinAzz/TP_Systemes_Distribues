@@ -1,8 +1,11 @@
 package org.example;
 import java.io.*;
 import java.net.*;
+import java.rmi.Naming;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import org.example.rmi.IAuthService;
 
 import org.example.service.ServerObserver;
 
@@ -269,6 +272,23 @@ class SmtpSession extends Thread {
             sendResponse("501 Syntax error in parameters or arguments");
             return;
         }
+        
+        // --- Vérification RMI ---
+        try {
+            IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+            String username = email.split("@")[0];
+            if (!authService.userExists(username)) {
+                sendResponse("550 User unknown / Non autorisé");
+                if (observer != null) observer.logEvent("Rejet SMTP: L'utilisateur '" + username + "' n'existe pas dans le registre RMI.");
+                return;
+            }
+        } catch (Exception e) {
+            if (observer != null) observer.logEvent("Erreur RMI (MAIL FROM): " + e.getMessage());
+            sendResponse("451 Requested action aborted: local error in processing (RMI injoignable)");
+            return;
+        }
+        // ------------------------
+
         sender = email;
         state = SmtpState.MAIL_FROM_SET;
         sendResponse("250 OK");

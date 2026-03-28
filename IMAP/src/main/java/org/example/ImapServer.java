@@ -2,7 +2,10 @@ package org.example;
 
 import java.io.*;
 import java.net.*;
+import java.rmi.Naming;
 import java.util.*;
+
+import org.example.rmi.IAuthService;
 
 import org.example.service.ServerObserver;
 
@@ -225,22 +228,34 @@ class ImapSession extends Thread {
         }
 
         String user = parts[0].replaceAll("\"", "");
-        // Password is accepted for simplicity (same as POP3)
+        String pass = parts[1].replaceAll("\"", "");
+
+        // --- Vérification RMI ---
+        try {
+            IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+            String token = authService.authenticate(user, pass);
+            if (token == null) {
+                sendResponse(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
+                if (observer != null) observer.logEvent("Échec auth RMI pour '" + user + "'");
+                return;
+            }
+            if (observer != null) observer.logEvent("Auth RMI réussie pour '" + user + "' (JWT: " + token.substring(0, 10) + "...)");
+        } catch (Exception e) {
+            if (observer != null) observer.logEvent("Erreur RMI (LOGIN): " + e.getMessage());
+            sendResponse(tag + " BAD Internal server error (RMI)");
+            return;
+        }
+        // ------------------------
 
         File mailserverDir = new File("mailserver");
-        if (!mailserverDir.exists()) {
-            mailserverDir = new File("../mailserver");
-        }
-
+        if (!mailserverDir.exists()) mailserverDir = new File("../mailserver");
         File dir = new File(mailserverDir, user);
-        if (dir.exists() && dir.isDirectory()) {
-            username = user;
-            userDir = dir;
-            state = ImapState.AUTHENTICATED;
-            sendResponse(tag + " OK LOGIN completed");
-        } else {
-            sendResponse(tag + " NO [AUTHENTICATIONFAILED] LOGIN failed");
-        }
+        if (!dir.exists()) dir.mkdirs();
+
+        username = user;
+        userDir = dir;
+        state = ImapState.AUTHENTICATED;
+        sendResponse(tag + " OK LOGIN completed");
     }
 
     private void handleSelect(String tag, String args) {
