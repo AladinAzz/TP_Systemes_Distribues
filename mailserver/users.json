@@ -1,17 +1,17 @@
 {
   "testuser": {
     "username": "testuser",
-    "passwordHash": "5v/x4ZrTjqC24Bo4eUv2/2v/09KL3hmT1H6gjxXh4kc=",
-    "salt": "BhU0BdGOs4CwsRKxfWBHIw=="
+    "passwordHash": "24lw4nE690ZnZsDT4kux5m2xGkEBceaaS1NUp3MLjYY\u003d",
+    "salt": "doQv3hl0HaYZw8pRTS0NeQ\u003d\u003d"
   },
   "user1": {
     "username": "user1",
-    "passwordHash": "QnefwebvM1WeBYkj6uyNkPL90ZkfiFg9Ff3oiXNnZEc=",
-    "salt": "yVHnXRKRAWnkvHrLMPA5bw=="
+    "passwordHash": "QnefwebvM1WeBYkj6uyNkPL90ZkfiFg9Ff3oiXNnZEc\u003d",
+    "salt": "yVHnXRKRAWnkvHrLMPA5bw\u003d\u003d"
   },
   "user2": {
     "username": "user2",
-    "passwordHash": "9V4yWlk4l42eQXIHL2ljcVVc5xxZZEwYpeIgQtJ2sGo=",
-    "salt": "1WiNgBbk9Ug+RkAbBUt07Q=="
+    "passwordHash": "9V4yWlk4l42eQXIHL2ljcVVc5xxZZEwYpeIgQtJ2sGo\u003d",
+    "salt": "1WiNgBbk9Ug+RkAbBUt07Q\u003d\u003d"
   }
 }

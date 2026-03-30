@@ -29,3 +29,73 @@
 [2026-03-28 18:55:06] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
 [2026-03-28 18:55:06] [ALADDIN] Serveur -> +OK POP3 server signing off
 [2026-03-28 18:55:06] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:01:40] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:01:40] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-28 21:02:02] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> USER testuser
+[2026-03-28 21:02:02] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-28 21:02:12] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> PASS password123
+[2026-03-28 21:02:12] [ALADDIN] INFO -> Auth RMI réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 21:02:12] [ALADDIN] Serveur -> +OK Password accepted
+[2026-03-28 21:02:18] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> STAT
+[2026-03-28 21:02:18] [ALADDIN] Serveur -> +OK 2 311
+[2026-03-28 21:02:24] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> LIST
+[2026-03-28 21:02:24] [ALADDIN] Serveur -> +OK 2 messages
+[2026-03-28 21:02:24] [ALADDIN] Serveur -> 1 158
+[2026-03-28 21:02:24] [ALADDIN] Serveur -> 2 153
+[2026-03-28 21:02:24] [ALADDIN] Serveur -> .
+[2026-03-28 21:02:39] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RETR 1
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> +OK 158 octets
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> From: testuser@example.com
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> To: testuser@example.com
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> Date: sam., 28 mars 2026 18:47:48 +0100
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> 
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> 
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> Subject: Test TP Distribue
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> Ceci est le corps du message.
+[2026-03-28 21:02:39] [ALADDIN] Serveur -> .
+[2026-03-28 21:02:52] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 21:02:52] [ALADDIN] Serveur -> +OK POP3 server signing off
+[2026-03-28 21:02:52] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:07:32] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:07:32] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-28 21:07:38] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RE>TR
+[2026-03-28 21:07:38] [ALADDIN] Serveur -> -ERR Unknown command
+[2026-03-28 21:07:43] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RETR 1
+[2026-03-28 21:07:43] [ALADDIN] Serveur -> -ERR Authentication required
+[2026-03-28 21:07:44] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> *
+[2026-03-28 21:07:44] [ALADDIN] Serveur -> -ERR Unknown command
+[2026-03-28 21:07:58] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> USER testuser
+[2026-03-28 21:07:58] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-28 21:08:05] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> PASS pass
+[2026-03-28 21:08:05] [ALADDIN] Serveur -> -ERR Invalid password or user not found
+[2026-03-28 21:08:05] [ALADDIN] INFO -> Échec auth RMI pour 'testuser'
+[2026-03-28 21:09:25] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:24:16] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:24:16] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-29 00:24:23] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> user bob
+[2026-03-29 00:24:23] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-29 00:24:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> pass 123456
+[2026-03-29 00:24:29] [ALADDIN] INFO -> Auth RMI réussie pour 'bob' (JWT: eyJhbGciOi...)
+[2026-03-29 00:24:29] [ALADDIN] Serveur -> +OK Password accepted
+[2026-03-29 00:25:48] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> logout
+[2026-03-29 00:25:48] [ALADDIN] Serveur -> -ERR Unknown command
+[2026-03-29 00:25:51] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> quit
+[2026-03-29 00:25:51] [ALADDIN] Serveur -> +OK POP3 server signing off
+[2026-03-29 00:25:51] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:25:53] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:25:53] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-29 00:26:08] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> user user1
+[2026-03-29 00:26:08] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-29 00:26:17] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> wrong
+[2026-03-29 00:26:17] [ALADDIN] Serveur -> -ERR Unknown command
+[2026-03-29 00:26:22] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> quit
+[2026-03-29 00:26:22] [ALADDIN] Serveur -> +OK POP3 server signing off
+[2026-03-29 00:26:22] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:26:24] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-29 00:26:24] [ALADDIN] Serveur -> +OK POP3 server ready
+[2026-03-29 00:26:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> user user1
+[2026-03-29 00:26:29] [ALADDIN] Serveur -> +OK User accepted, waiting for password
+[2026-03-29 00:26:38] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> pass pass
+[2026-03-29 00:26:38] [ALADDIN] Serveur -> -ERR Invalid password or user not found
+[2026-03-29 00:26:38] [ALADDIN] INFO -> Échec auth RMI pour 'user1'
+[2026-03-29 00:32:45] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1

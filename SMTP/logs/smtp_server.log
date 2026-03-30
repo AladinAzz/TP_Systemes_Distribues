@@ -52,3 +52,61 @@
 [2026-03-28 18:47:56] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
 [2026-03-28 18:47:56] [ALADDIN] Serveur -> 221 smtp.example.com Service closing transmission channel
 [2026-03-28 18:47:56] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:48:46] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:48:46] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-28 20:49:14] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> EHLO client.test
+[2026-03-28 20:49:14] [ALADDIN] Serveur -> 250-smtp.example.com Hello client.test
+[2026-03-28 20:49:14] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:49:42] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<exqmple
+[2026-03-28 20:49:42] [ALADDIN] Serveur -> 501 Syntax error in parameters or arguments
+[2026-03-28 20:50:04] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<example@example.com>
+[2026-03-28 20:50:04] [ALADDIN] Serveur -> 550 User unknown / Non autorisé
+[2026-03-28 20:50:04] [ALADDIN] INFO -> Rejet SMTP: 'example' inconnu du registre RMI.
+[2026-03-28 20:52:24] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 20:52:24] [ALADDIN] Serveur -> 221 smtp.example.com Service closing transmission channel
+[2026-03-28 20:52:24] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:52:28] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:52:28] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-28 20:52:41] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> EHLO localhost
+[2026-03-28 20:52:41] [ALADDIN] Serveur -> 250-smtp.example.com Hello localhost
+[2026-03-28 20:52:41] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:52:54] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<testuser@example.com>
+[2026-03-28 20:52:54] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:53:04] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<testuser@example.com>
+[2026-03-28 20:53:04] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:53:07] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> DATA
+[2026-03-28 20:53:07] [ALADDIN] Serveur -> 354 Start mail input; end with <CRLF>.<CRLF>
+[2026-03-28 20:53:32] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:53:38] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 20:53:38] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-28 20:53:52] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> EHLO localhost
+[2026-03-28 20:53:52] [ALADDIN] Serveur -> 250-smtp.example.com Hello localhost
+[2026-03-28 20:53:52] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:54:02] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<testuser@example.com>
+[2026-03-28 20:54:02] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:54:12] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<testuser@example.com>
+[2026-03-28 20:54:12] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 20:54:18] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> DATA
+[2026-03-28 20:54:18] [ALADDIN] Serveur -> 354 Start mail input; end with <CRLF>.<CRLF>
+[2026-03-28 20:54:52] [ALADDIN] INFO -> Email stocké pour testuser@example.com dans 20260328_205452.txt
+[2026-03-28 20:54:52] [ALADDIN] Serveur -> 250 OK: Message accepted for delivery
+[2026-03-28 20:54:57] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> quit
+[2026-03-28 20:54:57] [ALADDIN] Serveur -> 221 smtp.example.com Service closing transmission channel
+[2026-03-28 20:54:57] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:09:28] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:09:28] [ALADDIN] Serveur -> 220 smtp.example.com Service Ready
+[2026-03-28 21:09:34] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> hello
+[2026-03-28 21:09:34] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-28 21:09:42] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> HELO localhost
+[2026-03-28 21:09:42] [ALADDIN] Serveur -> 250 Hello localhost
+[2026-03-28 21:11:11] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> email from:<testuser@example.com>
+[2026-03-28 21:11:11] [ALADDIN] Serveur -> 500 Command unrecognized
+[2026-03-28 21:11:51] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> MAIL FROM:<testuser@example.com>
+[2026-03-28 21:11:51] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 21:12:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<tester@email>
+[2026-03-28 21:12:29] [ALADDIN] Serveur -> 250 OK
+[2026-03-28 21:13:02] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> HELO
+[2026-03-28 21:13:02] [ALADDIN] Serveur -> 250 Hello 
+[2026-03-28 21:13:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<example@gamil.com>
+[2026-03-28 21:13:29] [ALADDIN] Serveur -> 503 Bad sequence of commands
+[2026-03-28 21:51:50] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1

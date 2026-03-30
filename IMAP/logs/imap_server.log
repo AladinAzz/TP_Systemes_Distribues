@@ -19,3 +19,90 @@
 [2026-03-28 18:58:12] [ALADDIN] Serveur -> * BYE IMAP4rev2 Server logging out
 [2026-03-28 18:58:12] [ALADDIN] Serveur -> A[D4 OK LOGOUT completed
 [2026-03-28 18:58:12] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 19:03:06] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 19:03:06] [ALADDIN] Serveur -> * OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready
+[2026-03-28 19:03:15] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A1 LOGIN testuser password123
+[2026-03-28 19:03:15] [ALADDIN] INFO -> Auth réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 19:03:15] [ALADDIN] Serveur -> A1 OK LOGIN completed
+[2026-03-28 19:03:25] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT*
+[2026-03-28 19:03:25] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:27] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> [A
+[2026-03-28 19:03:27] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:30] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 19:03:30] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:34] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 19:03:34] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:35] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> 
+[2026-03-28 19:03:35] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:35] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> 
+[2026-03-28 19:03:35] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:35] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> 
+[2026-03-28 19:03:35] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:42] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> QUIT
+[2026-03-28 19:03:42] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 19:03:50] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A[D4 QUIT
+[2026-03-28 19:03:50] [ALADDIN] Serveur -> A[D4 BAD Unknown command
+[2026-03-28 19:03:59] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A4 QUIT
+[2026-03-28 19:03:59] [ALADDIN] Serveur -> A4 BAD Unknown command
+[2026-03-28 19:04:15] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A4 LOGOUT
+[2026-03-28 19:04:15] [ALADDIN] Serveur -> * BYE IMAP4rev2 Server logging out
+[2026-03-28 19:04:15] [ALADDIN] Serveur -> A4 OK LOGOUT completed
+[2026-03-28 19:04:15] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:01:18] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:01:18] [ALADDIN] Serveur -> * OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready
+[2026-03-28 21:01:22] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:52:07] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:52:07] [ALADDIN] Serveur -> * OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready
+[2026-03-28 21:52:17] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A1 LOGIN testuser password123
+[2026-03-28 21:52:17] [ALADDIN] INFO -> Auth réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 21:52:17] [ALADDIN] Serveur -> A1 OK LOGIN completed
+[2026-03-28 21:52:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A2 SELECT INBOX
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> * 2 EXISTS
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> * 0 RECENT
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> * FLAGS (\Seen \Answered \Flagged \Deleted \Draft)
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> * OK [PERMANENTFLAGS (\Seen \Deleted)]
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> * OK [UNSEEN 2]
+[2026-03-28 21:52:29] [ALADDIN] Serveur -> A2 OK [READ-WRITE] SELECT completed
+[2026-03-28 21:52:53] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 FETCH 1 BODY[]
+[2026-03-28 21:52:53] [ALADDIN] Serveur -> * 1 FETCH (BODY[] {158}
+[2026-03-28 21:52:53] [ALADDIN] Serveur -> A3 OK FETCH completed
+[2026-03-28 21:53:03] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A4 LOGOUT
+[2026-03-28 21:53:03] [ALADDIN] Serveur -> * BYE IMAP4rev2 Server logging out
+[2026-03-28 21:53:03] [ALADDIN] Serveur -> A4 OK LOGOUT completed
+[2026-03-28 21:53:03] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:55:03] [ALADDIN] INFO -> Nouvelle connexion client: 0:0:0:0:0:0:0:1
+[2026-03-28 21:55:03] [ALADDIN] Serveur -> * OK [CAPABILITY IMAP4rev2] IMAP4rev2 Service Ready
+[2026-03-28 21:55:22] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A1 LOGIN testuser password123
+[2026-03-28 21:55:22] [ALADDIN] INFO -> Auth réussie pour 'testuser' (JWT: eyJhbGciOi...)
+[2026-03-28 21:55:22] [ALADDIN] Serveur -> A1 OK LOGIN completed
+[2026-03-28 21:55:42] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A2 SELECT unknown
+[2026-03-28 21:55:42] [ALADDIN] Serveur -> A2 NO [NONEXISTENT] Mailbox does not exist
+[2026-03-28 21:57:54] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A2 SELECT INBOX
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> * 2 EXISTS
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> * 0 RECENT
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> * FLAGS (\Seen \Answered \Flagged \Deleted \Draft)
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> * OK [PERMANENTFLAGS (\Seen \Deleted)]
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> * OK [UNSEEN 2]
+[2026-03-28 21:57:54] [ALADDIN] Serveur -> A2 OK [READ-WRITE] SELECT completed
+[2026-03-28 21:58:27] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 FETCH 1
+[2026-03-28 21:58:27] [ALADDIN] Serveur -> A3 BAD FETCH requires sequence and data items
+[2026-03-28 21:58:27] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> (BODY[HEADER])
+[2026-03-28 21:58:27] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 21:58:50] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> Q
+[2026-03-28 21:58:50] [ALADDIN] Serveur -> * BAD Invalid command format
+[2026-03-28 21:58:59] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 FETCH 1 (BODY[HEADER])
+[2026-03-28 21:58:59] [ALADDIN] Serveur -> * 1 FETCH (BODY[HEADER] {97}
+[2026-03-28 21:58:59] [ALADDIN] Serveur -> A3 OK FETCH completed
+[2026-03-28 22:01:02] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 STORE 1 +FLAGS (\Seen)
+[2026-03-28 22:01:02] [ALADDIN] Serveur -> * 1 FETCH (FLAGS (\Seen))
+[2026-03-28 22:01:02] [ALADDIN] Serveur -> A3 OK STORE completed
+[2026-03-28 22:05:48] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A4 FETCH 1 (FLAGS)
+[2026-03-28 22:05:48] [ALADDIN] Serveur -> * 1 FETCH (FLAGS (\Seen))
+[2026-03-28 22:05:48] [ALADDIN] Serveur -> A4 OK FETCH completed
+[2026-03-28 22:08:28] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A3 SEARCH ALL
+[2026-03-28 22:08:28] [ALADDIN] Serveur -> * SEARCH 1 2
+[2026-03-28 22:08:28] [ALADDIN] Serveur -> A3 OK SEARCH completed
+[2026-03-28 22:15:17] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> A6 SEARCH UNSEEN
+[2026-03-28 22:15:17] [ALADDIN] Serveur -> * SEARCH 2
+[2026-03-28 22:15:17] [ALADDIN] Serveur -> A6 OK SEARCH completed
+[2026-03-28 22:51:25] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1

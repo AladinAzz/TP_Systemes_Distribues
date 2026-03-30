@@ -1,0 +1,7 @@
+From: testuser@example.com
+To: testuser@example.com
+Date: sam., 28 mars 2026 20:54:52 +0100
+
+
+Subject: Test TP Distribue
+c'est le copr du message
