@@ -5,7 +5,9 @@ import java.net.*;
 import java.rmi.Naming;
 import java.util.*;
 
-import org.example.rmi.IAuthService;
+import org.example.client.AuthRestClient;
+import org.example.db.EmailRecord;
+import org.example.db.EmailRepository;
 import org.example.service.ServerObserver;
 
 public class Pop3Server {
@@ -14,10 +16,15 @@ public class Pop3Server {
     private ServerSocket serverSocket;
     private volatile boolean running = false;
     private final List<Pop3Session> activeSessions = Collections.synchronizedList(new ArrayList<>());
+    private AuthRestClient authClientOverride;
 
     public Pop3Server(int port, ServerObserver observer) {
         this.port = port;
         this.observer = observer;
+    }
+
+    public void setAuthClientOverride(AuthRestClient authClient) {
+        this.authClientOverride = authClient;
     }
 
     public void start() throws IOException {
@@ -33,6 +40,9 @@ public class Pop3Server {
                 if (observer != null)
                     observer.logEvent("Nouvelle connexion client: " + ip);
                 Pop3Session session = new Pop3Session(client, observer, ip, this);
+                if (authClientOverride != null) {
+                    session.setAuthClient(authClientOverride);
+                }
                 activeSessions.add(session);
                 session.start();
             } catch (SocketException e) {
@@ -75,7 +85,8 @@ public class Pop3Server {
 class Pop3Session extends Thread {
 
     // FIX 9 — cache the RMI stub per session
-    private IAuthService authService;
+    private AuthRestClient authClient;
+    private final EmailRepository emailRepository = new EmailRepository();
 
     private final Socket socket;
     private BufferedReader in;
@@ -86,8 +97,7 @@ class Pop3Session extends Thread {
     private volatile boolean interrupted = false;
 
     private String username;
-    private File userDir;
-    private List<File> emails;
+    private List<EmailRecord> emails;
     private boolean authenticated;
 
     /**
@@ -110,16 +120,15 @@ class Pop3Session extends Thread {
     }
 
     // FIX 9 — single lookup per session
-    private IAuthService getAuthService() {
-        if (authService == null) {
-            try {
-                authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
-            } catch (Exception e) {
-                if (observer != null)
-                    observer.logEvent("Erreur RMI lookup: " + e.getMessage());
-            }
+    private AuthRestClient getAuthService() {
+        if (authClient == null) {
+            authClient = new AuthRestClient();
         }
-        return authService;
+        return authClient;
+    }
+
+    public void setAuthClient(AuthRestClient client) {
+        this.authClient = client;
     }
 
     public void interruptSession() {
@@ -223,10 +232,9 @@ class Pop3Session extends Thread {
             return;
         }
 
-        // FIX 9 — use cached RMI stub
-        IAuthService svc = getAuthService();
+        AuthRestClient svc = getAuthService();
         if (svc == null) {
-            sendResponse("-ERR Internal server error (RMI unavailable)");
+            sendResponse("-ERR Internal server error (Auth unavailable)");
             return;
         }
 
@@ -235,34 +243,22 @@ class Pop3Session extends Thread {
             if (token == null) {
                 sendResponse("-ERR Invalid password or user not found");
                 if (observer != null)
-                    observer.logEvent("Échec auth RMI pour '" + username + "'");
+                    observer.logEvent("Échec auth pour '" + username + "'");
                 return;
             }
             if (observer != null)
-                observer.logEvent("Auth RMI réussie pour '" + username +
-                        "' (JWT: " + token.substring(0, Math.min(10, token.length())) + "...)");
+                observer.logEvent("Auth REST réussie pour '" + username + "'");
         } catch (Exception e) {
             if (observer != null)
-                observer.logEvent("Erreur RMI (PASS): " + e.getMessage());
-            sendResponse("-ERR Internal server error (RMI)");
+                observer.logEvent("Erreur Auth (PASS): " + e.getMessage());
+            sendResponse("-ERR Internal server error");
             return;
         }
 
-        File mailserverDir = resolveMailserverDir();
-        userDir = new File(mailserverDir, username);
-        if (!userDir.exists())
-            userDir.mkdirs();
-
-        // Only .txt files — exclude IMAP companion .flags files
-        File[] files = userDir.listFiles((d, name) -> name.endsWith(".txt"));
-        emails = files != null ? new ArrayList<>(Arrays.asList(files)) : new ArrayList<>();
-        Collections.sort(emails); // stable order
-
-        // FIX 8 — use a Set of indices instead of a parallel boolean list
+        emails = emailRepository.fetchEmails(username);
         markedForDeletion = new HashSet<>();
-
         authenticated = true;
-        sendResponse("+OK Password accepted");
+        sendResponse("+OK Password accepted, " + emails.size() + " messages");
     }
 
     private void handleStat() {
@@ -270,7 +266,7 @@ class Pop3Session extends Thread {
             sendResponse("-ERR Authentication required");
             return;
         }
-        long size = emails.stream().mapToLong(File::length).sum();
+        long size = emails.stream().mapToLong(r -> r.getBody().length()).sum();
         sendResponse("+OK " + emails.size() + " " + size);
     }
 
@@ -281,7 +277,7 @@ class Pop3Session extends Thread {
         }
         sendResponse("+OK " + emails.size() + " messages");
         for (int i = 0; i < emails.size(); i++) {
-            sendResponse((i + 1) + " " + emails.get(i).length());
+            sendResponse((i + 1) + " " + emails.get(i).getBody().length());
         }
         sendResponse(".");
     }
@@ -293,27 +289,19 @@ class Pop3Session extends Thread {
         }
         try {
             int index = Integer.parseInt(arg.trim()) - 1;
-            if (index < 0 || index >= emails.size()) {
-                sendResponse("-ERR No such message");
-                return;
-            }
-            File emailFile = emails.get(index);
-            sendResponse("+OK " + emailFile.length() + " octets");
-            try (BufferedReader reader = new BufferedReader(new FileReader(emailFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // FIX 7 — RFC 1939 byte-stuffing: prefix lines starting with "."
-                    if (line.startsWith("."))
-                        sendResponse("." + line);
-                    else
-                        sendResponse(line);
-                }
+            EmailRecord email = emails.get(index);
+            String content = email.getBody();
+            sendResponse("+OK " + content.length() + " octets");
+            
+            for (String line : content.split("\r\n")) {
+                if (line.startsWith("."))
+                    sendResponse("." + line);
+                else
+                    sendResponse(line);
             }
             sendResponse(".");
         } catch (NumberFormatException e) {
             sendResponse("-ERR Invalid message number");
-        } catch (IOException e) {
-            sendResponse("-ERR Error reading message");
         }
     }
 
@@ -365,21 +353,19 @@ class Pop3Session extends Thread {
             List<Integer> sorted = new ArrayList<>(markedForDeletion);
             sorted.sort(Collections.reverseOrder());
             for (int idx : sorted) {
-                File f = emails.get(idx);
-                if (f.delete()) {
+                EmailRecord record = emails.get(idx);
+                if (emailRepository.deleteEmail(record.getId())) {
                     if (observer != null)
-                        observer.logEvent("Email supprimé: " + f.getName());
+                        observer.logEvent("Email supprimé en base: " + record.getId());
                     emails.remove(idx);
                 } else {
                     if (observer != null)
-                        observer.logEvent("Échec suppression: " + f.getName());
+                        observer.logEvent("Échec suppression en base: " + record.getId());
                 }
             }
         }
         sendResponse("+OK POP3 server signing off");
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private File resolveMailserverDir() {
         File d = new File("mailserver");

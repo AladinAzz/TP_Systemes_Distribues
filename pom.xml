@@ -13,9 +13,9 @@
         <module>SMTP</module>
         <module>POP3</module>
         <module>IMAP</module>
-        <module>Auth-API</module>
         <module>Auth-Server</module>
         <module>Auth-Client</module>
+        <module>DB-Core</module>
     </modules>
 
     <properties>
@@ -23,6 +23,8 @@
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>3.2.3</spring-boot.version>
+        <junit.version>5.10.2</junit.version>
+        <h2.version>2.2.224</h2.version>
     </properties>
 
     <dependencyManagement>
@@ -34,7 +36,26 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>

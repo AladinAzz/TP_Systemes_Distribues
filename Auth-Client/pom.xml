@@ -18,10 +18,11 @@
     </properties>
 
     <dependencies>
+        <!-- JSON Processing (Jackson) -->
         <dependency>
-            <groupId>org.example</groupId>
-            <artifactId>Auth-API</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.16.1</version>
         </dependency>
     </dependencies>
 

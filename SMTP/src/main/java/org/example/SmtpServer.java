@@ -6,7 +6,8 @@ import java.rmi.Naming;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.example.rmi.IAuthService;
+import org.example.client.AuthRestClient;
+import org.example.db.EmailRepository;
 import org.example.service.ServerObserver;
 
 public class SmtpServer {
@@ -76,7 +77,8 @@ public class SmtpServer {
 class SmtpSession extends Thread {
 
     // FIX 9 — Cache the RMI stub; looked up once per session, not per command.
-    private IAuthService authService;
+    private AuthRestClient authClient;
+    private final EmailRepository emailRepository = new EmailRepository();
 
     private Socket socket;
     private BufferedReader in;
@@ -107,16 +109,11 @@ class SmtpSession extends Thread {
     }
 
     // FIX 9 — one lookup per session
-    private IAuthService getAuthService() {
-        if (authService == null) {
-            try {
-                authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
-            } catch (Exception e) {
-                if (observer != null)
-                    observer.logEvent("Erreur RMI lookup: " + e.getMessage());
-            }
+    private AuthRestClient getAuthService() {
+        if (authClient == null) {
+            authClient = new AuthRestClient();
         }
-        return authService;
+        return authClient;
     }
 
     public void interruptSession() {
@@ -261,9 +258,9 @@ class SmtpSession extends Thread {
         }
 
         // FIX 9 — use cached RMI stub
-        IAuthService svc = getAuthService();
+        AuthRestClient svc = getAuthService();
         if (svc == null) {
-            sendResponse("451 Local error: RMI unavailable");
+            sendResponse("451 Local error: Auth service unavailable");
             return;
         }
         try {
@@ -271,13 +268,13 @@ class SmtpSession extends Thread {
             if (!svc.userExists(username)) {
                 sendResponse("550 User unknown / Non autorisé");
                 if (observer != null)
-                    observer.logEvent("Rejet SMTP: '" + username + "' inconnu du registre RMI.");
+                    observer.logEvent("Rejet SMTP: '" + username + "' inconnu.");
                 return;
             }
         } catch (Exception e) {
             if (observer != null)
-                observer.logEvent("Erreur RMI (MAIL FROM): " + e.getMessage());
-            sendResponse("451 Local error in processing (RMI)");
+                observer.logEvent("Erreur Auth (MAIL FROM): " + e.getMessage());
+            sendResponse("451 Local error in processing");
             return;
         }
 
@@ -299,14 +296,6 @@ class SmtpSession extends Thread {
         String email = extractEmail(potentialEmail);
         if (email == null) {
             sendResponse("501 Syntax error in parameters or arguments");
-            return;
-        }
-
-        String username = email.split("@")[0];
-        File mailserverDir = resolveMailserverDir();
-        File userDir = new File(mailserverDir, username);
-        if (!userDir.exists() && !userDir.mkdirs()) {
-            sendResponse("550 Failed to create mailbox directory");
             return;
         }
 
@@ -349,9 +338,6 @@ class SmtpSession extends Thread {
      * fall back to "(no subject)".
      */
     private void storeEmail(String data) {
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mailserverDir = resolveMailserverDir();
-
         // Extract subject from the buffered DATA
         String subject = "(no subject)";
         for (String line : data.split("\r\n")) {
@@ -364,39 +350,19 @@ class SmtpSession extends Thread {
         }
 
         for (String recipient : recipients) {
-            String username = recipient.split("@")[0];
-            File userDir = new File(mailserverDir, username);
-            if (!userDir.exists())
-                userDir.mkdirs();
-
-            File emailFile = new File(userDir, timestamp + ".txt");
-            try (PrintWriter writer = new PrintWriter(new FileWriter(emailFile))) {
-                // RFC 5322 envelope headers
-                writer.println("From: " + sender);
-                writer.println("To: " + String.join(", ", recipients));
-                writer.println("Date: " +
-                        new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z").format(new Date()));
-                writer.println("Subject: " + subject); // FIX 3
-                writer.println();
-                writer.print(data);
+            boolean success = emailRepository.storeEmail(sender, recipient, subject, data);
+            if (success) {
                 if (observer != null)
-                    observer.logEvent("Email stocké pour " + recipient +
-                            " dans " + emailFile.getName());
-            } catch (IOException e) {
+                    observer.logEvent("Email stocké en base pour " + recipient);
+            } else {
                 if (observer != null)
-                    observer.logEvent("Erreur stockage email: " + e.getMessage());
+                    observer.logEvent("Échec du stockage MySQL pour " + recipient);
             }
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private File resolveMailserverDir() {
-        File d = new File("mailserver");
-        if (!d.exists())
-            d = new File("../mailserver");
-        return d;
-    }
 
     private String extractToken(String line) {
         String[] p = line.split(" ");
