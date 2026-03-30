@@ -79,6 +79,7 @@ public class EmailRepositoryTest {
         assertEquals(1, emails.size());
         assertEquals("alice@test.com", emails.get(0).getSender());
         assertEquals("Hello", emails.get(0).getSubject());
+        assertEquals("received", emails.get(0).getEmailType());
     }
 
     @Test
@@ -90,5 +91,14 @@ public class EmailRepositoryTest {
         assertTrue(repository.updateFlags(id, "\\Seen \\Answered"));
         emails = repository.fetchEmails("b");
         assertTrue(emails.get(0).getFlags().contains("\\Seen"));
+    }
+
+    @Test
+    public void testFetchSentEmails() {
+        repository.storeEmail("sender@test.com", "receiver@test.com", "Sent Subject", "Sent Body");
+        List<EmailRecord> sentEmails = repository.fetchSentEmails("sender");
+        assertFalse(sentEmails.isEmpty());
+        assertEquals("sender@test.com", sentEmails.get(0).getSender());
+        assertEquals("sent", sentEmails.get(0).getEmailType());
     }
 }

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMAP Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <h1>IMAP Mailbox</h1>
+    <div class="top-actions">
+        <a class="btn" href="/">Home</a>
+        <a class="btn" href="/pop3">POP3</a>
+        <a class="btn" href="/compose">Compose</a>
+        <button id="themeToggle" class="theme-toggle" type="button">Toggle Theme</button>
+    </div>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2>Service Status</h2>
+        <div class="service-grid">
+            <div class="service-item">
+                <span>SMTP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['smtp'] == 'RUNNING'} ? ' status-running' : (${serviceStates['smtp'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['smtp']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>POP3</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['pop3'] == 'RUNNING'} ? ' status-running' : (${serviceStates['pop3'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['pop3']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>IMAP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['imap'] == 'RUNNING'} ? ' status-running' : (${serviceStates['imap'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['imap']}">UNKNOWN</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>IMAP Mailbox - <span th:text="${username}"></span></h2>
+        <div class="tabs">
+            <a class="tab-link"
+               th:classappend="${activeTab == 'received'} ? ' active'"
+               href="/imap">Received</a>
+            <a class="tab-link"
+               th:classappend="${activeTab == 'sent'} ? ' active'"
+               href="/imap/sent">Sent</a>
+        </div>
+        <table class="mail-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th th:text="${activeTab == 'sent'} ? 'To' : 'From'">From</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Flags</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(emails)}">
+                <td colspan="6">No messages.</td>
+            </tr>
+            <tr th:each="mail : ${emails}">
+                <td th:text="${mail['id']}"></td>
+                <td th:text="${activeTab == 'sent' ? mail['recipient'] : mail['sender']}"></td>
+                <td th:text="${mail['subject']}"></td>
+                <td th:text="${mail['emailType']}"></td>
+                <td th:text="${mail['flags']}"></td>
+                <td><a class="btn small" th:href="@{|/imap/email/${mail['id']}|}">Open</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

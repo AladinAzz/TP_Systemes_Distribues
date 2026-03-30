@@ -99,3 +99,55 @@
 [2026-03-29 00:26:38] [ALADDIN] Serveur -> -ERR Invalid password or user not found
 [2026-03-29 00:26:38] [ALADDIN] INFO -> Échec auth RMI pour 'user1'
 [2026-03-29 00:32:45] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-30 20:46:21] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 20:46:21] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 20:52:18] [ALADDIN] INFO -> Arrêt du serveur POP3 en cours...
+[2026-03-30 20:52:18] [ALADDIN] INFO -> Serveur POP3 arrêté.
+[2026-03-30 20:54:32] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 20:54:32] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 20:55:32] [ALADDIN] INFO -> Arrêt du serveur POP3 en cours...
+[2026-03-30 20:55:32] [ALADDIN] INFO -> Serveur POP3 arrêté.
+[2026-03-30 20:55:34] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 20:55:34] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:00:41] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:00:41] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:01:35] [ALADDIN] INFO -> Arrêt du serveur POP3 en cours...
+[2026-03-30 21:01:35] [ALADDIN] INFO -> Serveur POP3 arrêté.
+[2026-03-30 21:01:39] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:01:39] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:02:21] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:02:21] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:03:29] [ALADDIN] INFO -> Arrêt du serveur POP3 en cours...
+[2026-03-30 21:03:29] [ALADDIN] INFO -> Serveur POP3 arrêté.
+[2026-03-30 21:03:31] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:03:31] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:15:51] [ALADDIN] INFO -> Arrêt du serveur POP3 en cours...
+[2026-03-30 21:15:51] [ALADDIN] INFO -> Serveur POP3 arrêté.
+[2026-03-30 21:16:47] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:16:47] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:37:50] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:37:50] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:43:47] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:43:47] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:51:41] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:51:41] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 21:52:11] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 21:54:36] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 21:59:57] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 21:59:57] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 22:00:18] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 22:02:11] [ALADDIN] INFO -> [REST POP3] /messages user=alaaazzouz count=4
+[2026-03-30 22:02:48] [ALADDIN] INFO -> [REST POP3] /messages/4 user=alaaazzouz found
+[2026-03-30 22:02:51] [ALADDIN] INFO -> [REST POP3] /messages user=alaaazzouz count=4
+[2026-03-30 22:02:59] [ALADDIN] INFO -> [REST POP3] /messages/1 user=alaaazzouz found
+[2026-03-30 22:03:02] [ALADDIN] INFO -> [REST POP3] /messages user=alaaazzouz count=4
+[2026-03-30 22:03:05] [ALADDIN] INFO -> [REST POP3] /messages/2 user=alaaazzouz found
+[2026-03-30 22:03:07] [ALADDIN] INFO -> [REST POP3] /messages user=alaaazzouz count=4
+[2026-03-30 22:22:58] [ALADDIN] INFO -> Démarrage du serveur POP3 sur le port 110
+[2026-03-30 22:22:58] [ALADDIN] INFO -> Serveur POP3 en écoute sur le port 110
+[2026-03-30 22:23:34] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 22:23:36] [ALADDIN] INFO -> [REST POP3] /messages/sent user=aladdin count=5
+[2026-03-30 22:23:39] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 22:23:41] [ALADDIN] INFO -> [REST POP3] /messages/sent user=aladdin count=5
+[2026-03-30 22:23:42] [ALADDIN] INFO -> [REST POP3] /messages user=aladdin count=0
+[2026-03-30 22:23:44] [ALADDIN] INFO -> [REST POP3] /messages/sent user=aladdin count=5

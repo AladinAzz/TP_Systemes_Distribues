@@ -46,15 +46,14 @@ public class SmtpServerService implements ServerObserver {
         serverThread = new Thread(() -> {
             try {
                 logEvent("Démarrage du serveur SMTP sur le port " + port);
-                smtpServer.start();
                 isRunning = true;
+                smtpServer.start();
             } catch (Exception e) {
                 logEvent("Erreur lors du démarrage du serveur: " + e.getMessage());
                 isRunning = false;
             }
         });
         serverThread.start();
-        isRunning = true;
     }
 
     public synchronized void stopServer() {

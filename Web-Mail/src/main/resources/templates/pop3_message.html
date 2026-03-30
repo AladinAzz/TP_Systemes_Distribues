@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POP3 Message</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <h1>POP3 Message</h1>
+    <div class="top-actions">
+        <a class="btn" href="/pop3">Back</a>
+        <button id="themeToggle" class="theme-toggle" type="button">Toggle Theme</button>
+    </div>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2 th:text="${message['subject']} ?: 'Message'"></h2>
+        <p><strong>From:</strong> <span th:text="${message['sender']}"></span></p>
+        <p><strong>To:</strong> <span th:text="${message['recipient']}"></span></p>
+        <pre class="mail-body" th:text="${message['body']}"></pre>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

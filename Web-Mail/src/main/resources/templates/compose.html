@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compose Mail</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <h1>SMTP Compose</h1>
+    <div class="top-actions">
+        <a class="btn" href="/">Home</a>
+        <a class="btn" href="/imap">IMAP</a>
+        <a class="btn" href="/pop3">POP3</a>
+        <button id="themeToggle" class="theme-toggle" type="button">Toggle Theme</button>
+    </div>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2>Service Status</h2>
+        <div class="service-grid">
+            <div class="service-item">
+                <span>SMTP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['smtp'] == 'RUNNING'} ? ' status-running' : (${serviceStates['smtp'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['smtp']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>POP3</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['pop3'] == 'RUNNING'} ? ' status-running' : (${serviceStates['pop3'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['pop3']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>IMAP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['imap'] == 'RUNNING'} ? ' status-running' : (${serviceStates['imap'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['imap']}">UNKNOWN</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Send New Email as <span th:text="${username}"></span></h2>
+        <p th:if="${status != null}" class="status" th:text="${status}"></p>
+        <form action="/compose/send" method="post" class="form-grid">
+            <label>Recipients (comma-separated)
+                <input type="text" name="recipients" placeholder="alice,bob,charlie" required>
+            </label>
+            <label>Subject
+                <input type="text" name="subject" required>
+            </label>
+            <label>Body
+                <textarea name="body" rows="10" required></textarea>
+            </label>
+            <button type="submit">Send</button>
+        </form>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

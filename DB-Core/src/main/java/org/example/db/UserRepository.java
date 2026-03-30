@@ -90,11 +90,26 @@ public class UserRepository {
             cs.setString(1, username);
             cs.setString(2, hash);
             cs.setString(3, salt);
-            return cs.executeUpdate() > 0;
+            return executeCallReturningSuccess(cs);
         } catch (SQLException e) {
             System.err.println("[UserRepository] Error in updatePassword: " + e.getMessage());
         }
         return false;
+    }
+
+    private boolean executeCallReturningSuccess(CallableStatement cs) throws SQLException {
+        boolean hasResultSet = cs.execute();
+        if (hasResultSet) {
+            try (ResultSet rs = cs.getResultSet()) {
+                if (rs != null && rs.next()) {
+                    Object first = rs.getObject(1);
+                    if (first instanceof Number n) {
+                        return n.intValue() > 0;
+                    }
+                }
+            }
+        }
+        return cs.getUpdateCount() > 0;
     }
 
     /**

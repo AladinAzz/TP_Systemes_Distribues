@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMAP Message</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <h1>IMAP Message</h1>
+    <div class="top-actions">
+        <a class="btn" href="/imap">Back</a>
+        <button id="themeToggle" class="theme-toggle" type="button">Toggle Theme</button>
+    </div>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2 th:text="${email['subject']} ?: 'Message'"></h2>
+        <p><strong>From:</strong> <span th:text="${email['sender']}"></span></p>
+        <p><strong>To:</strong> <span th:text="${email['recipient']}"></span></p>
+        <p><strong>Flags:</strong> <span th:text="${email['flags']}"></span></p>
+        <pre class="mail-body" th:text="${email['body']}"></pre>
+
+        <div class="actions">
+            <form th:action="@{|/imap/email/${email['id']}/read|}" method="post">
+                <button type="submit">Mark As Read</button>
+            </form>
+            <form th:action="@{|/imap/email/${email['id']}/delete|}" method="post">
+                <button type="submit" class="danger">Delete</button>
+            </form>
+        </div>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

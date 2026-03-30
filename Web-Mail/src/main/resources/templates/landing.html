@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Mail - Landing</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <h1>Distributed Web Mail</h1>
+    <button id="themeToggle" class="theme-toggle" type="button">Toggle Theme</button>
+</header>
+
+<main class="container">
+
+
+    <section class="topbar">
+        <h2 th:if="${username == null}">Sign In</h2>
+        <h2 th:if="${username != null}">Welcome, <span th:text="${username}"></span></h2>
+
+        <form th:if="${username == null}" action="/login" method="post" class="form-grid">
+            <label>Username <input type="text" name="username" required></label>
+            <label>Password <input type="password" name="password" required></label>
+            <button type="submit">Login</button>
+        </form>
+
+        <p class="error" th:if="${error != null}" th:text="${error}"></p>
+
+        <form th:if="${username != null}" action="/logout" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </section>
+
+
+    <section class="card">
+        <h2>Choose Interface</h2>
+        <div class="actions">
+            <a class="btn" href="/imap">Open IMAP UI</a>
+            <a class="btn" href="/pop3">Open POP3 UI</a>
+            <a class="btn" href="/compose">Open SMTP Compose</a>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Service Status</h2>
+        <div class="service-grid">
+            <div class="service-item">
+                <span>SMTP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['smtp'] == 'RUNNING'} ? ' status-running' : (${serviceStates['smtp'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['smtp']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>POP3</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['pop3'] == 'RUNNING'} ? ' status-running' : (${serviceStates['pop3'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['pop3']}">UNKNOWN</span>
+            </div>
+            <div class="service-item">
+                <span>IMAP</span>
+                <span class="status-pill"
+                      th:classappend="${serviceStates['imap'] == 'RUNNING'} ? ' status-running' : (${serviceStates['imap'] == 'STOPPED'} ? ' status-stopped' : ' status-unreachable')"
+                      th:text="${serviceStates['imap']}">UNKNOWN</span>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

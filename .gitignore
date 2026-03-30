@@ -41,6 +41,7 @@ build/
 
 # JWT secret key — contains cryptographic material
 mailserver/.jwt_secret
+Auth-Server/mailserver/.jwt_secret
 
 # Plain-text password backup created by migration script
 mailserver/users.json.bak

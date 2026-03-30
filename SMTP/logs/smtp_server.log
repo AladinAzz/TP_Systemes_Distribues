@@ -110,3 +110,25 @@
 [2026-03-28 21:13:29] [ALADDIN] Client (0:0:0:0:0:0:0:1) -> RCPT TO:<example@gamil.com>
 [2026-03-28 21:13:29] [ALADDIN] Serveur -> 503 Bad sequence of commands
 [2026-03-28 21:51:50] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-30 20:46:55] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 20:46:55] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 20:52:11] [ALADDIN] INFO -> Arrêt du serveur SMTP en cours...
+[2026-03-30 20:52:11] [ALADDIN] INFO -> Serveur SMTP arrêté.
+[2026-03-30 20:53:57] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 20:53:57] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:02:33] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:02:33] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:15:57] [ALADDIN] INFO -> Arrêt du serveur SMTP en cours...
+[2026-03-30 21:15:57] [ALADDIN] INFO -> Serveur SMTP arrêté.
+[2026-03-30 21:16:42] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:16:42] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:38:19] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:38:19] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:43:38] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:43:38] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:51:36] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:51:36] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 21:59:51] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 21:59:51] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25
+[2026-03-30 22:23:02] [ALADDIN] INFO -> Démarrage du serveur SMTP sur le port 25
+[2026-03-30 22:23:02] [ALADDIN] INFO -> Serveur SMTP en écoute sur le port 25

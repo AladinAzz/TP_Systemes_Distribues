@@ -325,3 +325,192 @@ Le fichier [schema.sql](file:///c:/Users/derrm/Documents/System%20distrubue/TP_S
 ---
 > [!IMPORTANT]
 > Le module **Auth-API** a été supprimé car le contrat RMI n'est plus nécessaire. Toute la logique client est désormais centralisée dans le module **Auth-Client**.
+
+---
+
+## Correctifs Post-Migration (appliqués)
+
+Cette section documente les corrections appliquées après les tests manuels d'intégration.
+
+### A. Couverture de tests ajoutée
+- Ajout de tests dans les modules qui n'en avaient pas :
+  - `Auth-Client` : `JwtManagerTest`
+  - `Web-Mail` : `WebControllerTest`, `JwtAuthenticationFilterTest`
+- Ajustement des tests Web pour éviter la dépendance Mockito inline sous Java 25 (remplacement par stub manuel).
+
+### B. Correctifs DB/MySQL et initialisation
+- Correction de connexion MySQL :
+  - ajout de `allowPublicKeyRetrieval=true` dans les URL JDBC utilisées par défaut.
+- Initialisation explicite de `DatabaseManager` au démarrage Spring (plus de fallback implicite vers `root`):
+  - `Auth-Server` : bootstrap avec `db.url`, `db.user`, `db.pass`
+  - `SMTP`, `POP3`, `IMAP` : mêmes propriétés + initialisation au startup.
+- Ajout de `application.properties` manquants dans `SMTP`, `POP3`, `IMAP`.
+
+### C. Wiring Spring des protocoles
+- Résolution des `UnsatisfiedDependencyException` :
+  - enregistrement explicite de `EmailRepository` comme bean Spring dans `SMTP`, `POP3`, `IMAP`.
+- Les contrôleurs REST protocolaires démarrent désormais correctement avec injection de dépendances.
+
+### D. Web-Mail (interface) — fiabilité et diagnostics
+- Correction des annotations de paramètres Spring MVC (`@RequestParam("...")`, `@PathVariable("...")`) pour éviter l'erreur `-parameters`.
+- Ajout d'un panneau **Service Status** dans l'UI Web-Mail :
+  - états `RUNNING / STOPPED / UNREACHABLE` pour SMTP, POP3, IMAP via `/api/status`.
+- Ajout de logs explicites côté `MailApiClient` sur les échecs HTTP (status + exception) pour faciliter le diagnostic.
+
+### E. Gating de disponibilité des services
+- SMTP REST:
+  - `/api/mail/send` refuse l'envoi (`503`) si le serveur SMTP n'est pas démarré depuis l'UI admin.
+- IMAP REST:
+  - endpoints `/api/imap/*` refusent les requêtes (`503`) si le serveur IMAP n'est pas démarré depuis l'UI admin.
+
+### F. Cohérence des identités mailbox
+- Normalisation des boîtes (`recipient`, `sender`, `username`) :
+  - extraction local-part (avant `@`) + `lowercase`.
+- Application côté écriture SMTP et côté lecture REST POP3/IMAP.
+- Correction repository DB pour la lecture :
+  - `fetchEmails(username)` accepte maintenant
+    - `recipient = username`
+    - ou `recipient LIKE username@%`
+  - comparaison en `LOWER(...)` + tri `sent_at DESC`.
+
+### G. JWT partagé entre modules
+- Résolution déterministe du fichier de clé JWT pour éviter les clés divergentes selon le dossier de lancement.
+- Priorité:
+  1. `-Djwt.key.file`
+  2. `JWT_KEY_FILE`
+  3. `mailserver/.jwt_secret` à la racine projet.
+- Effet: Auth-Server et consommateurs REST valident les mêmes tokens.
+
+### H. Diagnostics REST protocoles
+- Ajout de logs REST explicites dans POP3/IMAP :
+  - ex: `[REST POP3] /messages user=... count=...`
+  - ex: `[REST IMAP] /inbox user=... count=...`
+- Ajout de logs SMTP REST sur le stockage DB :
+  - ex: `[REST SMTP] send sender=... recipients=... stored=...`
+  - retour HTTP aligné sur résultat réel (`500` si rien stocké, `207` en partiel).
+
+### I. Résultat de validation
+- Exécutions Maven multi-modules successives (`mvnw test`) : **BUILD SUCCESS**.
+- Vérifications manuelles :
+  - communication Web-Mail ↔ POP3/IMAP confirmée (logs REST visibles),
+  - affichage des emails corrigé après adaptation des filtres de lecture DB.
+
+---
+
+## Mise à Jour Finale — Web-Mail + Correctifs protocoles (2026-03-30)
+
+Cette section résume les changements effectivement appliqués dans le code après la planification finale.
+
+### 1) Module `Web-Mail` complété
+
+#### Backend Web (client strict des API REST)
+- Ajout d'un client REST central :
+  - `Web-Mail/src/main/java/org/example/web/service/MailApiClient.java`
+  - Rôles :
+    - auth via `AuthRestClient.authenticate()`,
+    - appels vers `SMTP` (`/api/mail/send`),
+    - appels vers `IMAP` (`/api/imap/inbox`, `/api/imap/emails/{id}`, `/api/imap/emails/{id}/read`, `/api/imap/emails/{id}` DELETE),
+    - appels vers `POP3` (`/api/pop3/messages`, `/api/pop3/messages/{id}`).
+
+- Ajout du contrôleur Web principal :
+  - `Web-Mail/src/main/java/org/example/web/controller/WebController.java`
+  - Routes implémentées :
+    - `/` (landing + login/logout)
+    - `/imap`, `/imap/email/{id}`, actions read/delete
+    - `/pop3`, `/pop3/message/{id}`
+    - `/compose`, `/compose/send`
+
+- Ajout d'un filtre de session JWT (côté Web module) :
+  - `Web-Mail/src/main/java/org/example/web/security/JwtAuthenticationFilter.java`
+  - `Web-Mail/src/main/java/org/example/web/security/FilterConfig.java`
+  - Protection des routes :
+    - `/imap/**`
+    - `/pop3/**`
+    - `/compose/**`
+  - Redirection vers `/` si token absent en session.
+
+#### UI Web
+- Templates Thymeleaf ajoutés :
+  - `Web-Mail/src/main/resources/templates/landing.html`
+  - `Web-Mail/src/main/resources/templates/imap_dashboard.html`
+  - `Web-Mail/src/main/resources/templates/imap_email.html`
+  - `Web-Mail/src/main/resources/templates/pop3_dashboard.html`
+  - `Web-Mail/src/main/resources/templates/pop3_message.html`
+  - `Web-Mail/src/main/resources/templates/compose.html`
+
+- Thème Dark/Light global :
+  - `Web-Mail/src/main/resources/static/css/styles.css`
+  - `Web-Mail/src/main/resources/static/js/theme.js`
+  - Persistance côté navigateur via `localStorage`.
+
+- Configuration Web module :
+  - `Web-Mail/src/main/resources/application.properties`
+  - `server.port=8083` (évite conflit avec SMTP en 8080)
+  - URLs des API externalisées :
+    - `mail.api.smtp-base`
+    - `mail.api.pop3-base`
+    - `mail.api.imap-base`
+
+### 2) Correctifs protocolaires et robustesse backend
+
+#### IMAP
+- Fichier : `IMAP/src/main/java/org/example/ImapServer.java`
+- Correctifs :
+  - Vérification stricte des arguments et bornes dans `FETCH` et `STORE` (pas de `IndexOutOfBoundsException`).
+  - Validation d'état renforcée pour `SELECT` (seulement `AUTHENTICATED`/`SELECTED`).
+  - Message BYE aligné sur la capacité annoncée : `IMAP4rev2`.
+
+#### POP3
+- Fichier : `POP3/src/main/java/org/example/Pop3Server.java`
+- Correctif :
+  - Réponse `PASS` simplifiée : `+OK Password accepted` (sans annoncer le count).
+
+#### SMTP
+- Fichier : `SMTP/src/main/java/org/example/SmtpServer.java`
+- Correctif :
+  - Parsing `MAIL FROM` rendu robuste via regex capturant l'adresse, sans dépendre d'un `substring(5)`.
+
+- Fichier : `SMTP/src/main/java/org/example/service/SmtpServerService.java`
+- Correctif :
+  - `isRunning` n'est plus fixé trop tôt avant un démarrage effectif du thread serveur.
+
+### 3) Base de données / repositories
+
+#### Credentials défaut
+- Fichier : `DB-Core/src/main/java/org/example/db/DatabaseManager.java`
+- Correctif :
+  - `DEFAULT_PASS` aligné sur `mailpass`.
+
+#### Procédure `update_password`
+- Fichier : `DB-Core/src/main/java/org/example/db/UserRepository.java`
+- Correctif :
+  - `updatePassword()` utilise désormais une stratégie `execute()` + inspection `ResultSet`/`updateCount` (même logique de robustesse que `EmailRepository`).
+
+### 4) Auth-Server (cohérence build)
+
+- Fichiers :
+  - `Auth-Server/src/main/java/org/example/server/JwtManager.java` (restauré)
+  - `Auth-Server/src/main/java/org/example/server/AuthController.java` (import JWT corrigé)
+- Effet :
+  - compilation rétablie du module `Auth-Server`.
+
+### 5) Secret JWT versionné
+
+- `.gitignore` mis à jour pour couvrir :
+  - `Auth-Server/mailserver/.jwt_secret`
+- Note :
+  - le fichier était déjà présent dans l'historique Git ; l'entrée `.gitignore` empêche les nouveaux commits accidentels.
+
+### 6) Résultat de vérification final
+
+- Commande exécutée :
+  - `./mvnw clean test`
+- Résultat :
+  - **BUILD SUCCESS** sur tous les modules :
+    - `Auth-Client`
+    - `DB-Core`
+    - `SMTP`
+    - `POP3`
+    - `IMAP`
+    - `Auth-Server`
+    - `Web-Mail`

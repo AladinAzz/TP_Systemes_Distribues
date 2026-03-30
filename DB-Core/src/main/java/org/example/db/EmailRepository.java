@@ -33,26 +33,64 @@ public class EmailRepository {
      */
     public List<EmailRecord> fetchEmails(String username) {
         List<EmailRecord> emails = new ArrayList<>();
+        String normalized = normalizeMailbox(username);
+        String sql = "SELECT * FROM emails " +
+                "WHERE is_deleted = FALSE " +
+                "AND (LOWER(recipient) = ? OR LOWER(recipient) LIKE ?) " +
+                "ORDER BY sent_at DESC";
         try (Connection conn = DatabaseManager.getConnection();
-             CallableStatement cs = conn.prepareCall("{CALL fetch_emails(?)}")) {
-            
-            cs.setString(1, username);
-            try (ResultSet rs = cs.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, normalized);
+            ps.setString(2, normalized + "@%");
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     emails.add(new EmailRecord(
-                        rs.getInt("id"),
-                        rs.getString("sender"),
-                        rs.getString("recipient"),
-                        rs.getString("subject"),
-                        rs.getString("body"),
-                        rs.getTimestamp("sent_at"),
-                        rs.getBoolean("is_read"),
-                        rs.getString("flags")
+                            rs.getInt("id"),
+                            rs.getString("sender"),
+                            rs.getString("recipient"),
+                            rs.getString("subject"),
+                            rs.getString("body"),
+                            rs.getTimestamp("sent_at"),
+                            rs.getBoolean("is_read"),
+                            rs.getString("flags"),
+                            "received"
                     ));
                 }
             }
         } catch (SQLException e) {
             System.err.println("[EmailRepository] Error in fetchEmails: " + e.getMessage());
+        }
+        return emails;
+    }
+
+    public List<EmailRecord> fetchSentEmails(String username) {
+        List<EmailRecord> emails = new ArrayList<>();
+        String normalized = normalizeMailbox(username);
+        String sql = "SELECT * FROM emails " +
+                "WHERE is_deleted = FALSE " +
+                "AND (LOWER(sender) = ? OR LOWER(sender) LIKE ?) " +
+                "ORDER BY sent_at DESC";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, normalized);
+            ps.setString(2, normalized + "@%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    emails.add(new EmailRecord(
+                            rs.getInt("id"),
+                            rs.getString("sender"),
+                            rs.getString("recipient"),
+                            rs.getString("subject"),
+                            rs.getString("body"),
+                            rs.getTimestamp("sent_at"),
+                            rs.getBoolean("is_read"),
+                            rs.getString("flags"),
+                            "sent"
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[EmailRepository] Error in fetchSentEmails: " + e.getMessage());
         }
         return emails;
     }
@@ -107,7 +145,8 @@ public class EmailRepository {
     public List<EmailRecord> searchEmails(String username, String criteria, String value) {
         List<EmailRecord> results = new ArrayList<>();
         // Note: Ici on pourrait faire une version SQL, mais pour rester simple on filtre en Java ou on adapte SQL
-        String sql = "SELECT * FROM emails WHERE recipient = ? AND is_deleted = FALSE ";
+        String sql = "SELECT * FROM emails WHERE is_deleted = FALSE " +
+                "AND (LOWER(recipient) = ? OR LOWER(recipient) LIKE ?) ";
         
         if (criteria.equalsIgnoreCase("FROM")) {
             sql += "AND sender LIKE ?";
@@ -120,9 +159,11 @@ public class EmailRepository {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
-            ps.setString(1, username);
+            String normalized = normalizeMailbox(username);
+            ps.setString(1, normalized);
+            ps.setString(2, normalized + "@%");
             if (!criteria.equalsIgnoreCase("ALL")) {
-                ps.setString(2, "%" + value + "%");
+                ps.setString(3, "%" + value + "%");
             }
             
             try (ResultSet rs = ps.executeQuery()) {
@@ -135,7 +176,8 @@ public class EmailRepository {
                         rs.getString("body"),
                         rs.getTimestamp("sent_at"),
                         rs.getBoolean("is_read"),
-                        rs.getString("flags")
+                        rs.getString("flags"),
+                        "received"
                     ));
                 }
             }
@@ -143,5 +185,14 @@ public class EmailRepository {
             System.err.println("[EmailRepository] Error in searchEmails: " + e.getMessage());
         }
         return results;
+    }
+
+    private String normalizeMailbox(String username) {
+        if (username == null) {
+            return "";
+        }
+        String value = username.trim().toLowerCase();
+        int at = value.indexOf('@');
+        return at > 0 ? value.substring(0, at) : value;
     }
 }

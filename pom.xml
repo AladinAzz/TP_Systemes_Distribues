@@ -16,6 +16,7 @@
         <module>Auth-Server</module>
         <module>Auth-Client</module>
         <module>DB-Core</module>
+        <module>Web-Mail</module>
     </modules>
 
     <properties>

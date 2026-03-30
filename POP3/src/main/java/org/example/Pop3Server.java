@@ -258,7 +258,7 @@ class Pop3Session extends Thread {
         emails = emailRepository.fetchEmails(username);
         markedForDeletion = new HashSet<>();
         authenticated = true;
-        sendResponse("+OK Password accepted, " + emails.size() + " messages");
+        sendResponse("+OK Password accepted");
     }
 
     private void handleStat() {

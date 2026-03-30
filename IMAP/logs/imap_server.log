@@ -106,3 +106,50 @@
 [2026-03-28 22:15:17] [ALADDIN] Serveur -> * SEARCH 2
 [2026-03-28 22:15:17] [ALADDIN] Serveur -> A6 OK SEARCH completed
 [2026-03-28 22:51:25] [ALADDIN] INFO -> Déconnexion client: 0:0:0:0:0:0:0:1
+[2026-03-30 20:46:13] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 20:46:13] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 20:52:23] [ALADDIN] INFO -> Arrêt du serveur IMAP en cours...
+[2026-03-30 20:52:23] [ALADDIN] INFO -> Serveur IMAP arrêté.
+[2026-03-30 21:02:40] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 21:02:40] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 21:16:01] [ALADDIN] INFO -> Arrêt du serveur IMAP en cours...
+[2026-03-30 21:16:01] [ALADDIN] INFO -> Serveur IMAP arrêté.
+[2026-03-30 21:16:54] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 21:16:54] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 21:31:47] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 21:31:47] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 21:43:52] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 21:43:52] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 21:51:48] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 21:51:48] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 21:51:58] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 21:52:14] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 21:54:37] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:00:03] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 22:00:03] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 22:00:15] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:00:20] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:01:36] [ALADDIN] INFO -> [REST IMAP] /inbox user=alaaazzouz count=4
+[2026-03-30 22:01:53] [ALADDIN] INFO -> [REST IMAP] /emails/4 user=alaaazzouz found
+[2026-03-30 22:02:00] [ALADDIN] INFO -> [REST IMAP] /emails/4/read user=alaaazzouz updated
+[2026-03-30 22:02:00] [ALADDIN] INFO -> [REST IMAP] /emails/4 user=alaaazzouz found
+[2026-03-30 22:02:03] [ALADDIN] INFO -> [REST IMAP] /emails/4/read user=alaaazzouz updated
+[2026-03-30 22:02:03] [ALADDIN] INFO -> [REST IMAP] /emails/4 user=alaaazzouz found
+[2026-03-30 22:02:07] [ALADDIN] INFO -> [REST IMAP] /inbox user=alaaazzouz count=4
+[2026-03-30 22:22:38] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 22:22:38] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 22:22:49] [ALADDIN] INFO -> Arrêt du serveur IMAP en cours...
+[2026-03-30 22:22:49] [ALADDIN] INFO -> Serveur IMAP arrêté.
+[2026-03-30 22:22:50] [ALADDIN] INFO -> Démarrage du serveur IMAP sur le port 143
+[2026-03-30 22:22:50] [ALADDIN] INFO -> Serveur IMAP en écoute sur le port 143
+[2026-03-30 22:23:13] [ALADDIN] INFO -> [REST IMAP] /inbox user=alaaazzouz count=4
+[2026-03-30 22:23:16] [ALADDIN] INFO -> [REST IMAP] /inbox/sent user=alaaazzouz count=0
+[2026-03-30 22:23:17] [ALADDIN] INFO -> [REST IMAP] /inbox user=alaaazzouz count=4
+[2026-03-30 22:23:27] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:23:28] [ALADDIN] INFO -> [REST IMAP] /inbox/sent user=aladdin count=5
+[2026-03-30 22:23:31] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:32:13] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:32:15] [ALADDIN] INFO -> [REST IMAP] /inbox/sent user=aladdin count=5
+[2026-03-30 22:32:20] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:33:57] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0
+[2026-03-30 22:34:56] [ALADDIN] INFO -> [REST IMAP] /inbox user=aladdin count=0

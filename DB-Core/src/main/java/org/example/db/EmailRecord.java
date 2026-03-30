@@ -14,9 +14,15 @@ public class EmailRecord {
     private Timestamp sentAt;
     private boolean isRead;
     private String flags;
+    private String emailType;
 
     public EmailRecord(int id, String sender, String recipient, String subject, 
                        String body, Timestamp sentAt, boolean isRead, String flags) {
+        this(id, sender, recipient, subject, body, sentAt, isRead, flags, "received");
+    }
+
+    public EmailRecord(int id, String sender, String recipient, String subject,
+                       String body, Timestamp sentAt, boolean isRead, String flags, String emailType) {
         this.id = id;
         this.sender = sender;
         this.recipient = recipient;
@@ -25,6 +31,7 @@ public class EmailRecord {
         this.sentAt = sentAt;
         this.isRead = isRead;
         this.flags = flags;
+        this.emailType = emailType;
     }
 
     // Getters
@@ -36,6 +43,7 @@ public class EmailRecord {
     public Timestamp getSentAt() { return sentAt; }
     public boolean isRead() { return isRead; }
     public String getFlags() { return flags; }
+    public String getEmailType() { return emailType; }
 
 
     @Override
@@ -55,5 +63,9 @@ public class EmailRecord {
         if (updated != null) {
             this.isRead = updated.contains("\\Seen");
         }
+    }
+
+    public void setEmailType(String emailType) {
+        this.emailType = emailType;
     }
 }

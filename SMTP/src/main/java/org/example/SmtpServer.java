@@ -254,15 +254,15 @@ class SmtpSession extends Thread {
             sendResponse("503 Bad sequence of commands");
             return;
         }
-        if (!arg.toUpperCase().matches("^FROM:\\s*<[^>]+>$")) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("^FROM:\\s*<([^>]+)>$", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(arg);
+        if (!matcher.matches()) {
             sendResponse("501 Syntax error in parameters or arguments");
-            // FIX 6 — removed the debug leak: no second out.println(arg)
             return;
         }
 
-        String potentialEmail = arg.substring(5).trim();
-        potentialEmail = potentialEmail.substring(1, potentialEmail.length() - 1).trim();
-        String email = extractEmail(potentialEmail);
+        String email = extractEmail(matcher.group(1));
         if (email == null) {
             sendResponse("501 Syntax error in parameters or arguments");
             return;
@@ -310,7 +310,7 @@ class SmtpSession extends Thread {
             return;
         }
 
-        recipients.add(email);
+        recipients.add(normalizeMailbox(email));
         state = SmtpState.RCPT_TO_SET;
         sendResponse("250 OK");
     }
@@ -360,8 +360,9 @@ class SmtpSession extends Thread {
             }
         }
 
+        String normalizedSender = normalizeMailbox(sender);
         for (String recipient : recipients) {
-            boolean success = emailRepository.storeEmail(sender, recipient, subject, data);
+            boolean success = emailRepository.storeEmail(normalizedSender, recipient, subject, data);
             if (success) {
                 if (observer != null)
                     observer.logEvent("Email stocké en base pour " + recipient);
@@ -391,5 +392,14 @@ class SmtpSession extends Thread {
         if (at > 0 && at < input.length() - 1)
             return input;
         return null;
+    }
+
+    private String normalizeMailbox(String addressOrUser) {
+        if (addressOrUser == null) {
+            return "";
+        }
+        int at = addressOrUser.indexOf('@');
+        String mailbox = at > 0 ? addressOrUser.substring(0, at) : addressOrUser;
+        return mailbox.toLowerCase();
     }
 }

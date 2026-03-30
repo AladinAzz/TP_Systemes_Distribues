@@ -239,7 +239,7 @@ class ImapSession extends Thread {
     }
 
     private void handleSelect(String tag, String args) {
-        if (state == ImapState.NOT_AUTHENTICATED) {
+        if (state != ImapState.AUTHENTICATED && state != ImapState.SELECTED) {
             sendLine(tag + " BAD Command requires authentication");
             return;
         }
@@ -279,7 +279,21 @@ class ImapSession extends Thread {
             return;
         }
         String[] parts = args.split(" ", 2);
-        int seqNum = Integer.parseInt(parts[0]);
+        if (parts.length < 2) {
+            sendLine(tag + " BAD Invalid FETCH arguments");
+            return;
+        }
+        int seqNum;
+        try {
+            seqNum = Integer.parseInt(parts[0]);
+        } catch (NumberFormatException e) {
+            sendLine(tag + " BAD Invalid message sequence number");
+            return;
+        }
+        if (seqNum < 1 || seqNum > emails.size()) {
+            sendLine(tag + " BAD Invalid message sequence number");
+            return;
+        }
         EmailRecord email = emails.get(seqNum - 1);
         String upper = parts[1].toUpperCase();
 
@@ -304,7 +318,21 @@ class ImapSession extends Thread {
 
     private void handleStore(String tag, String args) {
         String[] parts = args.split(" ", 3);
-        int seqNum = Integer.parseInt(parts[0]);
+        if (parts.length < 3) {
+            sendLine(tag + " BAD Invalid STORE arguments");
+            return;
+        }
+        int seqNum;
+        try {
+            seqNum = Integer.parseInt(parts[0]);
+        } catch (NumberFormatException e) {
+            sendLine(tag + " BAD Invalid message sequence number");
+            return;
+        }
+        if (seqNum < 1 || seqNum > emails.size()) {
+            sendLine(tag + " BAD Invalid message sequence number");
+            return;
+        }
         String action = parts[1].toUpperCase();
         String flagStr = parts[2].trim().replaceAll("[\\(\\)]", "");
         List<String> newFlags = Arrays.asList(flagStr.split("\\s+"));
@@ -351,7 +379,7 @@ class ImapSession extends Thread {
 
     private void handleLogout(String tag) {
         state = ImapState.LOGOUT;
-        sendLine("* BYE IMAP Server logging out");
+        sendLine("* BYE IMAP4rev2 Server logging out");
         sendLine(tag + " OK LOGOUT completed");
     }
 
