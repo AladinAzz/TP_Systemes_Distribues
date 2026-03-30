@@ -31,7 +31,18 @@ public class UserRepository {
                 return new String[]{hash, salt};
             }
         } catch (SQLException e) {
-            System.err.println("[UserRepository] Error in getAuthData: " + e.getMessage());
+            try (Connection conn = DatabaseManager.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "SELECT password_hash, salt FROM users WHERE username = ? AND active = TRUE")) {
+                ps.setString(1, username);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return new String[]{rs.getString("password_hash"), rs.getString("salt")};
+                    }
+                }
+            } catch (SQLException fallbackError) {
+                System.err.println("[UserRepository] Error in getAuthData: " + fallbackError.getMessage());
+            }
         }
         return null;
     }

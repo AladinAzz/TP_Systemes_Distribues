@@ -33,6 +33,7 @@ public class EmailRepositoryTest {
             // Mock des procédures pour H2 en pointant vers les méthodes statiques ci-dessous
             st.execute("CREATE ALIAS IF NOT EXISTS store_email FOR \"org.example.db.EmailRepositoryTest.h2StoreEmail\"");
             st.execute("CREATE ALIAS IF NOT EXISTS fetch_emails FOR \"org.example.db.EmailRepositoryTest.h2FetchEmails\"");
+            st.execute("CREATE ALIAS IF NOT EXISTS update_flags FOR \"org.example.db.EmailRepositoryTest.h2UpdateFlags\"");
         }
     }
 
@@ -58,6 +59,14 @@ public class EmailRepositoryTest {
         return ps.executeQuery();
     }
 
+    public static int h2UpdateFlags(Connection conn, int id, String flags) throws SQLException {
+        try (java.sql.PreparedStatement ps = conn.prepareStatement("UPDATE emails SET flags = ? WHERE id = ?")) {
+            ps.setString(1, flags);
+            ps.setInt(2, id);
+            return ps.executeUpdate();
+        }
+    }
+
     @AfterAll
     public static void tearDown() {
         DatabaseManager.shutdown();
@@ -77,18 +86,6 @@ public class EmailRepositoryTest {
         repository.storeEmail("a", "b", "s", "b");
         List<EmailRecord> emails = repository.fetchEmails("b");
         int id = emails.get(0).getId();
-
-        // Pour updateFlags, on utilise SQL direct dans H2 pour l'alias si on veut simuler CALL update_flags
-        try (Connection conn = DatabaseManager.getConnection();
-             Statement st = conn.createStatement()) {
-            st.execute("CREATE ALIAS update_flags AS ' " +
-                    "    public static int updateFlags(java.sql.Connection conn, int id, String flags) throws java.sql.SQLException { " +
-                    "        java.sql.PreparedStatement ps = conn.prepareStatement(\"UPDATE emails SET flags = ? WHERE id = ?\"); " +
-                    "        ps.setString(1, flags); " +
-                    "        ps.setInt(2, id); " +
-                    "        return ps.executeUpdate(); " +
-                    "    }'");
-        }
 
         assertTrue(repository.updateFlags(id, "\\Seen \\Answered"));
         emails = repository.fetchEmails("b");

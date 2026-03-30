@@ -115,7 +115,7 @@ public class AuthClientMain extends JFrame {
 
         JPasswordField txtPass = new JPasswordField();
         Object[] message = { "Nouveau mot de passe pour " + selected + ":", txtPass };
-        
+
         int option = JOptionPane.showConfirmDialog(this, message, "Modifier", JOptionPane.OK_CANCEL_OPTION);
         if (option == JOptionPane.OK_OPTION) {
             String newPassword = new String(txtPass.getPassword());
@@ -123,9 +123,18 @@ public class AuthClientMain extends JFrame {
                 JOptionPane.showMessageDialog(this, "Le mot de passe ne peut pas être vide.");
                 return;
             }
-            // Note: On pourrait implémenter un endpoint PUT /auth/users/{username}/password en REST
-            // Pour l'instant on simule via AuthRestClient
-            // Logique à implémenter dans AuthRestClient si pas encore faite
+
+            new Thread(() -> {
+                boolean success = authClient.updatePassword(selected, newPassword);
+                SwingUtilities.invokeLater(() -> {
+                    if (success) {
+                        JOptionPane.showMessageDialog(this, "Mot de passe mis à jour avec succès.");
+                        refreshUserList();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la modification du mot de passe.");
+                    }
+                });
+            }).start();
         }
     }
 

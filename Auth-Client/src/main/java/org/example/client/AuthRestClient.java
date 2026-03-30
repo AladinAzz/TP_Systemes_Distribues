@@ -144,4 +144,23 @@ public class AuthRestClient {
         }
         return new ArrayList<>();
     }
+    public boolean updatePassword(String username, String newPassword) {
+        try {
+            String json = objectMapper.writeValueAsString(Map.of(
+                    "newPassword", newPassword
+            ));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BASE_URL + "/users/" + username + "/password"))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            System.err.println("[AuthRestClient] Erreur updatePassword: " + e.getMessage());
+        }
+        return false;
+    }
 }

@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.client.AuthRestClient;
 import org.example.db.DatabaseManager;
 import org.junit.jupiter.api.*;
 import java.io.*;
@@ -13,6 +14,7 @@ public class SmtpIntegrationTest {
 
     private static SmtpServer server;
     private static int port = 2525; // Port de test
+    private static AuthRestClient mockAuthClient;
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -33,10 +35,18 @@ public class SmtpIntegrationTest {
                     "flags VARCHAR(255) DEFAULT ''," +
                     "is_deleted BOOLEAN DEFAULT FALSE" +
                     ")");
-            st.execute("CREATE ALIAS store_email AS ' public static int storeEmail(java.sql.Connection conn, String s, String r, String sub, String b) throws java.sql.SQLException { java.sql.PreparedStatement ps = conn.prepareStatement(\"INSERT INTO emails (sender, recipient, subject, body) VALUES (?, ?, ?, ?)\"); ps.setString(1, s); ps.setString(2, r); ps.setString(3, sub); ps.setString(4, b); return ps.executeUpdate(); } '");
+            st.execute("CREATE ALIAS store_email FOR \"org.example.SmtpIntegrationTest.h2StoreEmail\"");
         }
 
+        mockAuthClient = new AuthRestClient() {
+            @Override
+            public boolean userExists(String username) {
+                return "alice".equals(username);
+            }
+        };
+
         server = new SmtpServer(port, null);
+        server.setAuthClientOverride(mockAuthClient);
         new Thread(() -> {
             try {
                 server.start();
@@ -87,6 +97,16 @@ public class SmtpIntegrationTest {
             assertTrue(line.startsWith("250"));
 
             out.println("QUIT");
+        }
+    }
+
+    public static int h2StoreEmail(Connection conn, String sender, String recipient, String subject, String body) throws Exception {
+        try (var ps = conn.prepareStatement("INSERT INTO emails (sender, recipient, subject, body) VALUES (?, ?, ?, ?)")) {
+            ps.setString(1, sender);
+            ps.setString(2, recipient);
+            ps.setString(3, subject);
+            ps.setString(4, body);
+            return ps.executeUpdate();
         }
     }
 }

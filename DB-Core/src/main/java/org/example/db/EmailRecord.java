@@ -37,6 +37,7 @@ public class EmailRecord {
     public boolean isRead() { return isRead; }
     public String getFlags() { return flags; }
 
+
     @Override
     public String toString() {
         return "EmailRecord{" +
@@ -47,5 +48,12 @@ public class EmailRecord {
                 ", sentAt=" + sentAt +
                 ", flags='" + flags + '\'' +
                 '}';
+    }
+
+    public void setFlags(String updated) {
+        this.flags = updated;
+        if (updated != null) {
+            this.isRead = updated.contains("\\Seen");
+        }
     }
 }

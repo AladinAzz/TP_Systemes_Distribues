@@ -2,7 +2,6 @@ package org.example;
 
 import java.io.*;
 import java.net.*;
-import java.rmi.Naming;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -16,10 +15,15 @@ public class SmtpServer {
     private ServerSocket serverSocket;
     private volatile boolean running = false;
     private final List<SmtpSession> activeSessions = Collections.synchronizedList(new ArrayList<>());
+    private AuthRestClient authClientOverride;
 
     public SmtpServer(int port, ServerObserver observer) {
         this.port = port;
         this.observer = observer;
+    }
+
+    public void setAuthClientOverride(AuthRestClient authClient) {
+        this.authClientOverride = authClient;
     }
 
     public void start() throws IOException {
@@ -35,6 +39,9 @@ public class SmtpServer {
                 if (observer != null)
                     observer.logEvent("Nouvelle connexion client: " + ip);
                 SmtpSession session = new SmtpSession(client, observer, ip, this);
+                if (authClientOverride != null) {
+                    session.setAuthClient(authClientOverride);
+                }
                 activeSessions.add(session);
                 session.start();
             } catch (SocketException e) {
@@ -114,6 +121,10 @@ class SmtpSession extends Thread {
             authClient = new AuthRestClient();
         }
         return authClient;
+    }
+
+    public void setAuthClient(AuthRestClient client) {
+        this.authClient = client;
     }
 
     public void interruptSession() {

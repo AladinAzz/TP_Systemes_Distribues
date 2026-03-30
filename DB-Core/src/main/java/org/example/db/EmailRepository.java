@@ -20,8 +20,8 @@ public class EmailRepository {
             cs.setString(2, recipient);
             cs.setString(3, subject);
             cs.setString(4, body);
-            
-            return cs.executeUpdate() > 0;
+
+            return executeCallReturningSuccess(cs);
         } catch (SQLException e) {
             System.err.println("[EmailRepository] Error in storeEmail: " + e.getMessage());
         }
@@ -64,7 +64,7 @@ public class EmailRepository {
         try (Connection conn = DatabaseManager.getConnection();
              CallableStatement cs = conn.prepareCall("{CALL delete_email(?)}")) {
             cs.setInt(1, emailId);
-            return cs.executeUpdate() > 0;
+            return executeCallReturningSuccess(cs);
         } catch (SQLException e) {
             System.err.println("[EmailRepository] Error in deleteEmail: " + e.getMessage());
         }
@@ -79,11 +79,26 @@ public class EmailRepository {
              CallableStatement cs = conn.prepareCall("{CALL update_flags(?, ?)}")) {
             cs.setInt(1, emailId);
             cs.setString(2, flags);
-            return cs.executeUpdate() > 0;
+            return executeCallReturningSuccess(cs);
         } catch (SQLException e) {
             System.err.println("[EmailRepository] Error in updateFlags: " + e.getMessage());
         }
         return false;
+    }
+
+    private boolean executeCallReturningSuccess(CallableStatement cs) throws SQLException {
+        boolean hasResultSet = cs.execute();
+        if (hasResultSet) {
+            try (ResultSet rs = cs.getResultSet()) {
+                if (rs != null && rs.next()) {
+                    Object first = rs.getObject(1);
+                    if (first instanceof Number n) {
+                        return n.intValue() > 0;
+                    }
+                }
+            }
+        }
+        return cs.getUpdateCount() > 0;
     }
 
     /**

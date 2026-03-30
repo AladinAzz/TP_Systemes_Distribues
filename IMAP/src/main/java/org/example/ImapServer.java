@@ -255,6 +255,19 @@ class ImapSession extends Thread {
 
         sendLine("* " + emails.size() + " EXISTS");
         sendLine("* 0 RECENT");
+
+        int firstUnseen = 0;
+        for (int i = 0; i < emails.size(); i++) {
+            if (!hasFlag(emails.get(i), "\\Seen")) {
+                firstUnseen = i + 1;
+                break;
+            }
+        }
+
+        if (firstUnseen > 0) {
+            sendLine("* OK [UNSEEN " + firstUnseen + "]");
+        }
+
         sendLine("* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)");
         sendLine("* OK [PERMANENTFLAGS (\\Seen \\Deleted)]");
         sendLine(tag + " OK [READ-WRITE] SELECT completed");
@@ -323,8 +336,8 @@ class ImapSession extends Thread {
                 case "ALL" -> true;
                 case "FROM" -> e.getSender().toLowerCase().contains(value);
                 case "SUBJECT" -> e.getSubject().toLowerCase().contains(value);
-                case "UNSEEN" -> !e.getFlags().contains("\\Seen");
-                case "SEEN" -> e.getFlags().contains("\\Seen");
+                case "UNSEEN" -> !hasFlag(e, "\\Seen");
+                case "SEEN" -> hasFlag(e, "\\Seen");
                 default -> false;
             };
             if (match) results.add(i + 1);
@@ -343,23 +356,36 @@ class ImapSession extends Thread {
     }
 
     private void addFlag(EmailRecord record, String flag) {
-        String current = record.getFlags();
+        String current = normalizedFlags(record);
         if (!current.contains(flag)) {
             String updated = (current.isEmpty() ? flag : current + " " + flag).trim();
             emailRepository.updateFlags(record.getId(), updated);
+            record.setFlags(updated);
         }
     }
 
     private void removeFlag(EmailRecord record, String flag) {
-        String current = record.getFlags();
+        String current = normalizedFlags(record);
         if (current.contains(flag)) {
             String updated = current.replace(flag, "").replaceAll("\\s+", " ").trim();
             emailRepository.updateFlags(record.getId(), updated);
+            record.setFlags(updated);
         }
     }
 
     private void setFlags(EmailRecord record, List<String> flags) {
-        emailRepository.updateFlags(record.getId(), String.join(" ", flags).trim());
+        String updated = String.join(" ", flags).trim();
+        emailRepository.updateFlags(record.getId(), updated);
+        record.setFlags(updated);
+    }
+
+    private boolean hasFlag(EmailRecord record, String flag) {
+        return normalizedFlags(record).contains(flag);
+    }
+
+    private String normalizedFlags(EmailRecord record) {
+        String flags = record.getFlags();
+        return flags == null ? "" : flags;
     }
 
     private String parseHeaders(String fullContent) {

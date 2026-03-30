@@ -3,14 +3,12 @@ package org.example;
 import org.example.client.AuthRestClient;
 import org.example.db.DatabaseManager;
 import org.junit.jupiter.api.*;
-import org.mockito.Mockito;
 import java.io.*;
 import java.net.*;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 public class Pop3IntegrationTest {
 
@@ -38,14 +36,21 @@ public class Pop3IntegrationTest {
                     "is_deleted BOOLEAN DEFAULT FALSE" +
                     ")");
 
-            st.execute("CREATE ALIAS fetch_emails AS ' public static java.sql.ResultSet fetchEmails(java.sql.Connection conn, String user) throws java.sql.SQLException { java.sql.PreparedStatement ps = conn.prepareStatement(\"SELECT * FROM emails WHERE recipient = ? AND is_deleted = FALSE ORDER BY sent_at DESC\"); ps.setString(1, user); return ps.executeQuery(); } '");
+            st.execute("CREATE ALIAS fetch_emails FOR \"org.example.Pop3IntegrationTest.h2FetchEmails\"");
             
             // Simuler quelques emails en base
-            st.execute("INSERT INTO emails (sender, recipient, subject, body) VALUES ('alice@test.com', 'bob@test.com', 'Hello', 'First message content')");
+            st.execute("INSERT INTO emails (sender, recipient, subject, body) VALUES ('alice@test.com', 'bob', 'Hello', 'First message content')");
         }
 
-        mockAuthClient = mock(AuthRestClient.class);
-        when(mockAuthClient.authenticate("bob", "password")).thenReturn("dummy-token");
+        mockAuthClient = new AuthRestClient() {
+            @Override
+            public String authenticate(String username, String password) {
+                if ("bob".equals(username) && "password".equals(password)) {
+                    return "dummy-token";
+                }
+                return null;
+            }
+        };
 
         server = new Pop3Server(port, null);
         server.setAuthClientOverride(mockAuthClient);
@@ -98,5 +103,12 @@ public class Pop3IntegrationTest {
 
             out.println("QUIT");
         }
+    }
+
+    public static java.sql.ResultSet h2FetchEmails(Connection conn, String user) throws Exception {
+        java.sql.PreparedStatement ps = conn.prepareStatement(
+                "SELECT * FROM emails WHERE recipient = ? AND is_deleted = FALSE ORDER BY sent_at DESC");
+        ps.setString(1, user);
+        return ps.executeQuery();
     }
 }

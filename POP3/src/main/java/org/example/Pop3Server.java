@@ -2,7 +2,7 @@ package org.example;
 
 import java.io.*;
 import java.net.*;
-import java.rmi.Naming;
+
 import java.util.*;
 
 import org.example.client.AuthRestClient;
@@ -367,10 +367,4 @@ class Pop3Session extends Thread {
         sendResponse("+OK POP3 server signing off");
     }
 
-    private File resolveMailserverDir() {
-        File d = new File("mailserver");
-        if (!d.exists())
-            d = new File("../mailserver");
-        return d;
-    }
 }

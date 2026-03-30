@@ -53,7 +53,7 @@ public class AuthController {
     }
 
     @GetMapping("/users/{username}/exists")
-    public ResponseEntity<?> userExists(@PathVariable String username) {
+    public ResponseEntity<?> userExists(@PathVariable("username") String username) {
         boolean exists = userRepository.exists(username);
         return ResponseEntity.ok(Map.of("exists", exists));
     }
@@ -80,7 +80,7 @@ public class AuthController {
     }
 
     @PutMapping("/users/{username}/password")
-    public ResponseEntity<?> updatePassword(@PathVariable String username, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updatePassword(@PathVariable("username") String username, @RequestBody Map<String, String> request) {
         String newPassword = request.get("newPassword");
         if (newPassword == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "newPassword required"));
@@ -99,7 +99,7 @@ public class AuthController {
     }
 
     @DeleteMapping("/users/{username}")
-    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+    public ResponseEntity<?> deleteUser(@PathVariable("username") String username) {
         if (userRepository.deleteUser(username)) {
             return ResponseEntity.ok().build();
         }
